@@ -1,0 +1,11 @@
+ENA Bruta Sudeste/CO 2000 a 2023
+https://www.ons.org.br/Paginas/resultados-da-operacao/historico-da-operacao/energia_afluente_subsistema.aspx
+
+
+Carga MWmed Sudeste/Centro-Oeste Mensal 2000 a 2023
+https://www.ons.org.br/Paginas/resultados-da-operacao/historico-da-operacao/carga_energia.aspx 
+
+Vazão Média Mensal Bacia do Rio São Francisco estação de Juazeiro
+https://www.snirh.gov.br/hidroweb/serieshistoricas
+
+Todos os dados foram acessados em 20/08/2023

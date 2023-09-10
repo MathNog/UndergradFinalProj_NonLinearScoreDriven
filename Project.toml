@@ -1,0 +1,5 @@
+[deps]
+Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
+GLMNet = "8d5ece8b-de18-5317-b113-243142960cc6"
+LIBLINEAR = "2d691ee1-e668-5016-a719-b2531b85e0f5"
+Optim = "429524aa-4258-5aef-a3af-852621145aeb"
