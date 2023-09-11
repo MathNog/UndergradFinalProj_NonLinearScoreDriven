@@ -203,7 +203,7 @@ time_varying_params = [true, false]
 random_walk = Dict(1=>false)
 random_walk_slope = Dict(1=>true)
 ar = Dict(1 => false)
-seasonality = Dict(1=>12)
+seasonality = Dict(1=>12, 2=>false)
 robust = false
 d = 0.5
 α = 0.5
@@ -250,8 +250,8 @@ savefig(path_saida*"qqplot_$(distribution)_carga.png")
 
 " ----- GAS-CNO LogNormal ------ "
 
-y = log.(dict_series["ena"]["values"])
-dates = dict_series["ena"]["dates"]
+y = log.(dict_series["carga"]["values"])
+dates = dict_series["carga"]["dates"]
 
 steps_ahead = 12
 len_train = length(y) - steps_ahead
@@ -264,13 +264,13 @@ dates_test = dates[len_train+1:end]
 
 distribution = "LogNormal"
 dist = UnobservedComponentsGAS.NormalDistribution(missing, missing)
-time_varying_params = [true, false]
-random_walk = Dict(1 => false)
-random_walk_slope = Dict(1 => true)
+time_varying_params = [false, true]
+random_walk = Dict(1 => false, 2=>true)
+random_walk_slope = Dict(1 => false, 2=>false)
 ar = Dict(1 => false, 2 => false)
-seasonality = Dict(1 => 12)
+seasonality = Dict(1 => false, 2=>false)
 robust = false
-d = 0.5
+d = 1.0
 α = 0.5
 num_scenarious = 500
 
@@ -334,15 +334,14 @@ dates_test = dates[len_train+1:end]
 
 distribution = "Gamma"
 dist = UnobservedComponentsGAS.GammaDistribution(missing, missing)
-time_varying_params = [true, true] # apenas o λ varia no tempo
+time_varying_params = [false, true] # apenas o λ varia no tempo
 random_walk = Dict(1=>false, 2=>false)
-random_walk_slope = Dict(1=>true, 2=>true)
+random_walk_slope = Dict(1=>false, 2=>true)
 ar = Dict(1 => false, 2=>false)
-seasonality = Dict(1=>12, 2=>12)
+seasonality = Dict(2=>12)
 robust = false
 d = 1.0
 α = 0.5
-
 num_scenarious = 500
 
 gas_model = UnobservedComponentsGAS.GASModel(dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust)
@@ -351,6 +350,7 @@ fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; initial_values = 
 residuals = get_residuals(fitted_model, distribution, y_train)
 forecast = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious)
         
+
 
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 path_saida = current_path*"\\Saidas\\Benchmark\\$distribution\\"
