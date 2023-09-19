@@ -66,7 +66,6 @@ function plot_acf_residuals(residuals, model)
     hline!([conf_interval, -conf_interval], line = (:red, :dash), label = "IC 95%")
 end
 
-
 function get_residuals_diagnosis_pvalues(residuals, fitted_model)
     dof = get_number_parameters(fitted_model)
     # Jarque Bera
@@ -146,7 +145,6 @@ function get_components(fitted_model, param, recover_scale, residuals)
     return components
 end
 
-
 function plot_components(fitted_model, estimation_dates, model, param, recover_scale, residuals)
     @unpack slope, level, seasonality = get_components(fitted_model, param, recover_scale, residuals)
     
@@ -185,8 +183,10 @@ plot(dict_series["ena"]["dates"],dict_series["ena"]["values"])
 
 " ----- GAS-CNO Normal ----- "
 
-y = dict_series["carga"]["values"]
-dates = dict_series["carga"]["dates"]
+include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
+
+y = dict_series["ena"]["values"]
+dates = dict_series["ena"]["dates"]
 
 steps_ahead = 12
 len_train = length(y) - steps_ahead
@@ -199,11 +199,11 @@ dates_test = dates[len_train+1:end]
 
 distribution = "Normal"
 dist = UnobservedComponentsGAS.NormalDistribution(missing, missing)
-time_varying_params = [true, false]
-random_walk = Dict(1=>false)
-random_walk_slope = Dict(1=>true)
-ar = Dict(1 => false)
-seasonality = Dict(1=>12, 2=>false)
+time_varying_params = [false, true]
+random_walk = Dict(2=>false,1=>false)
+random_walk_slope = Dict(2=>true,1=>false)
+ar = Dict(2 => false,1=>false)
+seasonality = Dict(2=>12)
 robust = false
 d = 0.5
 α = 0.5
@@ -334,11 +334,11 @@ dates_test = dates[len_train+1:end]
 
 distribution = "Gamma"
 dist = UnobservedComponentsGAS.GammaDistribution(missing, missing)
-time_varying_params = [false, true] # apenas o λ varia no tempo
-random_walk = Dict(1=>false, 2=>false)
-random_walk_slope = Dict(1=>false, 2=>true)
-ar = Dict(1 => false, 2=>false)
-seasonality = Dict(2=>12)
+time_varying_params = [true, true] # apenas o λ varia no tempo
+random_walk = Dict(2=>true, 1=>true)
+random_walk_slope = Dict(2=>false, 1=>false)
+ar = Dict(2=>false, 1=>false)
+seasonality = Dict(2=>false, 1=>false)
 robust = false
 d = 1.0
 α = 0.5

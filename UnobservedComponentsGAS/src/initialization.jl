@@ -139,15 +139,16 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
     order                   = get_AR_order(ar)
 
     initial_params = get_initial_params(y, time_varying_params, dist)
-
+    println(initial_params)
     initial_values = Vector{Any}(undef, sum(time_varying_params))
-
+    println(time_varying_params)
+    println(initial_values)
     has_level       = []
     has_slope       = []
     has_seasonal    = []
     
     for i in eachindex(initial_values)
-
+        println("------ i = $i ----------")
         #checking which components will be consider 
         if has_random_walk_slope(random_walk_slope, i)
             push!(has_level, true)
@@ -167,9 +168,15 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
         push!(has_seasonal, has_seasonality(seasonality, i))
         
         X_aux =  i == 1 && !ismissing(X) ? X : missing
-        
+        println("Aqui")
+        println("length(initial_params[i]) = ",length(initial_params[i]))
+        println("X_aux = ",X_aux)
+        println("has_level[i] = ",has_level[i])
+        println("has_slope[i] = ",has_slope[i])
+        println("has_seasonal[i] = ",has_seasonal[i])
+        println("order[i] = ",order[i])
         initial_values[i] = get_initial_values(initial_params[i], X_aux, has_level[i], has_slope[i], has_seasonal[i], order[i])
-         
+        println("Aqui")
         # initialize the mean parameter as the sum of the initial values of the components
         initial_params[i] = zeros(T)
         for k in ["rw", "rws", "slope", "seasonality", "explanatories", "ar"]

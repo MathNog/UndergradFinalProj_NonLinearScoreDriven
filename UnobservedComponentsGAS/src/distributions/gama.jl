@@ -129,25 +129,31 @@ Returns a dictionary with the initial values of the parameters of Normal distrib
 "ERRO ---- Quem eu devo colocar como parametros iniciais????????"
 function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, dist::GammaDistribution) where Fl
 
+    println("Inicialização dos parâmetros iniciais")
     T         = length(y)
     dist_code = get_dist_code(dist)
 
     initial_params = Dict()
 
-    # param[2] = λ
+    # param[2] = λ = média
     if time_varying_params[2]
+        println("λ = y")
         initial_params[2] = y
     else
+        println("λ = mean(y)")
         initial_params[2] = mean(y)
     end
 
     # param[1] = α
     if time_varying_params[1]
+        println("α = ??")
         initial_params[1] = (scaled_score.(y, ones(T) * var(diff(y)) , y, 0.5, dist_code, 2)).^2
     else
-        initial_params[1] = initial_params[2]^2/var(y) 
+        println("α = λ²/var(diff(y))")
+        initial_params[1] = mean(y)^2/var(diff(y)) 
     end
-
+    println(length(initial_params))
+    println([size(i) for i in values(initial_params)])
     return initial_params
 end
  

@@ -104,7 +104,10 @@ function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, di
     else
         initial_params[2] = var(diff(y))
     end
-
+    println(length(initial_params))
+    println(initial_params[1])
+    println(initial_params[2])
+    println([size(i) for i in values(initial_params)])
     return initial_params
 end
  
