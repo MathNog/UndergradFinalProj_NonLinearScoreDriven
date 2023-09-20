@@ -54,16 +54,16 @@ function compute_score(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, d::Floa
     num_time_varying_params = length(idx_time_varying_params)
 
     num_param = get_num_params(dist) # = 2 nos testes
-    println("num param = $num_param")
+    
     dist_code = get_dist_code(dist)
 
     # Imagine que estou fitando uma Normal com média constante e variância variante no tempo
     # Logo s tem 1 elemento apenas e idx_time_varying_params = [2]
-    s = Vector(undef, num_param) #antes estava num_time_varying_params
-    println("s = ",s)
+    s = Vector(undef, num_time_varying_params) #antes estava num_time_varying_params
+    
     if num_param == 2
-        println("idx_time_varying_params = ",idx_time_varying_params) # printa [2]
-        println("s[idx_time_varying_params] = $s[$idx_time_varying_params]")  
+        # println("idx_time_varying_params = ",idx_time_varying_params) # printa [2]
+        # println("s[idx_time_varying_params] = $s[$idx_time_varying_params]")  
         register(model, :scaled_score, 6, scaled_score; autodiff = true)
         for i in idx_time_varying_params
             # Erro -> estou tentando pegar s[2] sendo que s tem um só elemento

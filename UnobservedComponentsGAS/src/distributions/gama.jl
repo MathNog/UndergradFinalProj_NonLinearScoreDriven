@@ -3,8 +3,8 @@ Defines a Gamma distribution with parameters α λ.
 From a shape (α) and ratio (β) parametrization, we obtain our parametrization making λ = α/β
 "
 mutable struct GammaDistribution <: ScoreDrivenDistribution
-    α::Union{Missing, Float64}
     λ::Union{Missing, Float64}
+    α::Union{Missing, Float64}
 end
 
 "
@@ -44,9 +44,9 @@ function score_gama(α, λ, y)
 
     ∇_α =  log(y) - y/λ + log(α) - Ψ1(α) - log(λ) + 1
     ∇_λ = (α/λ)*(y/λ-1)
-    println("----------- Score Gamma -------------")
-    println(∇_α, ∇_λ)
-    return [∇_α; ∇_λ]
+    # println("----------- Score Gamma -------------")
+    # println(∇_α, ∇_λ)
+    return [∇_λ; ∇_α]
 end
 
 "
@@ -60,30 +60,30 @@ function fisher_information_gama(α, λ)
     I_λ = α/λ^2
     I_α = Ψ2(α) - 1/α
 
-    println("--------------Fisher Gamma --------------")
-    println(I_α, I_λ)
-    return [I_α 0; 0 I_λ]
+    # println("--------------Fisher Gamma --------------")
+    # println(I_α, I_λ)
+    return [I_λ 0; 0 I_α]
 end
 
 "
 Evaluate the log pdf of a Normal distribution with mean μ and variance σ², in observation y.
 "
-function logpdf_gama(α, λ, y)
+function logpdf_gama(λ, α, y)
 
-    println("--------- LogPDF ---------------")
-    println(logpdf_gama([α, λ], y))
-    return logpdf_gama([α, λ], y)
+    # println("--------- LogPDF ---------------")
+    # println(logpdf_gama([α, λ], y))
+    return logpdf_gama([λ, α], y)
 end
 
 "
 Evaluate the log pdf of a Normal distribution with mean μ and variance σ², in observation y.
-    param[1] = α
-    param[2] = λ 
+    param[1] = λ
+    param[2] = α 
 "
 function logpdf_gama(param, y)
 
-    param[1]>=0 ? α = param[1] : α = 1e-4
-    param[2]>=0 ? λ = param[2] : λ = 1e-4
+    param[2]>=0 ? α = param[2] : α = 1e-4
+    param[1]>=0 ? λ = param[1] : λ = 1e-4
     
     return -log(Γ(α)) - α*log(1/α) - α*log(λ) +(α-1)*log(y) - (α/λ)*y
 end
@@ -104,14 +104,14 @@ end
 
 "
 Simulates a value from a given Normal distribution.
-    param[1] = α
-    param[2] = λ  
+    param[1] = λ
+    param[2] = α  
 "
 function sample_dist(param::Vector{Float64}, dist::GammaDistribution)
     
     "A Gamma do pacote Distributions é parametrizada com shape α e scale θ"
     "Como θ = 1/β e β = α/λ, segue-se que θ = λ/α"
-    return rand(Distributions.Gamma(param[1], param[2]/param[1]))
+    return rand(Distributions.Gamma(param[2], param[1]/param[2]))
 end
 
 "
@@ -134,26 +134,29 @@ function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, di
     dist_code = get_dist_code(dist)
 
     initial_params = Dict()
-
+    fitted_distribution = fit_mle(Gamma, y)
+    
     # param[2] = λ = média
-    if time_varying_params[2]
+    if time_varying_params[1]
         println("λ = y")
-        initial_params[2] = y
+        # println(y)
+        initial_params[1] = y
     else
         println("λ = mean(y)")
-        initial_params[2] = mean(y)
+        initial_params[1] = fitted_distribution.α*fitted_distribution.θ
     end
 
     # param[1] = α
-    if time_varying_params[1]
+    if time_varying_params[2]
         println("α = ??")
-        initial_params[1] = (scaled_score.(y, ones(T) * var(diff(y)) , y, 0.5, dist_code, 2)).^2
+        initial_params[2] = (scaled_score.(y, ones(T) * var(diff(y)) , y, 0.5, dist_code, 2)).^2
     else
         println("α = λ²/var(diff(y))")
-        initial_params[1] = mean(y)^2/var(diff(y)) 
+        # println(mean(y)^2/var(diff(y)) )
+        initial_params[2] = fitted_distribution.α#mean(y)^2/var((y)) 
     end
-    println(length(initial_params))
-    println([size(i) for i in values(initial_params)])
+    # println(length(initial_params))
+    # println([size(i) for i in values(initial_params)])
     return initial_params
 end
  

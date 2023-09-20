@@ -50,9 +50,10 @@ function get_residuals(fitted_model, model, y)
     end
 end
 
-function plot_residuals(residuals, dates, model)
+function plot_residuals(residuals, dates, model, std_bool)
+    std_bool==true ? res = (residuals.-mean(residuals))./std(residuals) : res = residuals
     plot(title="Resíduos $model")
-    plot!(dates[2:end], residuals[2:end] , label="Resíduos")
+    plot!(dates[2:end], res[2:end] , label="Resíduos")
 end
 
 function plot_acf_residuals(residuals, model)
@@ -128,26 +129,28 @@ end
 
 function get_components(fitted_model, param, recover_scale, residuals)    
     dict_components = fitted_model.components[param]
+    components = Dict()
     if recover_scale
         K = get_number_parameters(fitted_model)
-        components = Dict(
-            "slope" => correct_scale(dict_components["slope"]["value"], K, residuals),
-            "level" => correct_scale(dict_components["level"]["value"], K, residuals),
-            "seasonality" => correct_scale(dict_components["seasonality"]["value"], K, residuals),
-        )
+        for key in keys(dict_components)
+            key != "intercept" ? components[key] = correct_scale(dict_components[key]["value"], K, residuals) : nothing
+        end
+            
     else     
-        components = Dict(
-            "slope" => dict_components["slope"]["value"],
-            "level" => dict_components["level"]["value"],
-            "seasonality" => dict_components["seasonality"]["value"],
-        )
+        for key in keys(dict_components)
+            key != "intercept" ? components[key] = dict_components[key]["value"] : nothing
+        end
     end
     return components
 end
 
 function plot_components(fitted_model, estimation_dates, model, param, recover_scale, residuals)
-    @unpack slope, level, seasonality = get_components(fitted_model, param, recover_scale, residuals)
+    components = get_components(fitted_model, param, recover_scale, residuals)
     
+    "level" in keys(components) ? level = components["level"] : level = ones(length(estimation_dates)).*missing
+    "slope" in keys(components) ? slope = components["slope"] : slope = ones(length(estimation_dates)).*missing
+    "seasonality" in keys(components) ? seasonality = components["seasonality"] : seasonality = ones(length(estimation_dates)).*missing
+
     p1 = plot(estimation_dates[2:end], level[2:end], label="Level")
     p2 = plot(estimation_dates[2:end],slope[2:end], label="Slope")
     p3 = plot(estimation_dates[2:end], seasonality[2:end], label="Seasonality")
@@ -199,11 +202,11 @@ dates_test = dates[len_train+1:end]
 
 distribution = "Normal"
 dist = UnobservedComponentsGAS.NormalDistribution(missing, missing)
-time_varying_params = [false, true]
+time_varying_params = [true, false]
 random_walk = Dict(2=>false,1=>false)
-random_walk_slope = Dict(2=>true,1=>false)
+random_walk_slope = Dict(1=>true,2=>false)
 ar = Dict(2 => false,1=>false)
-seasonality = Dict(2=>12)
+seasonality = Dict(1=>12)
 robust = false
 d = 0.5
 α = 0.5
@@ -334,11 +337,11 @@ dates_test = dates[len_train+1:end]
 
 distribution = "Gamma"
 dist = UnobservedComponentsGAS.GammaDistribution(missing, missing)
-time_varying_params = [true, true] # apenas o λ varia no tempo
-random_walk = Dict(2=>true, 1=>true)
-random_walk_slope = Dict(2=>false, 1=>false)
-ar = Dict(2=>false, 1=>false)
-seasonality = Dict(2=>false, 1=>false)
+time_varying_params = [true, false] # apenas o λ varia no tempo
+random_walk = Dict(1=>false)
+random_walk_slope = Dict(1=>true)
+ar = Dict(1=>false)
+seasonality = Dict(1=>12)
 robust = false
 d = 1.0
 α = 0.5
@@ -351,7 +354,6 @@ residuals = get_residuals(fitted_model, distribution, y_train)
 forecast = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious)
         
 
-
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 path_saida = current_path*"\\Saidas\\Benchmark\\$distribution\\"
 recover_scale = false
@@ -361,7 +363,7 @@ savefig(path_saida*"fit_in_sample_$(distribution)_carga.png")
 plot_forecast(fitted_model, forecast, y_test, dates_test, distribution, residuals, recover_scale)
 savefig(path_saida*"forecast_$(distribution)_carga.png")
 
-plot_residuals(residuals, dates_train, distribution)
+plot_residuals(residuals, dates_train, distribution, true)
 savefig(path_saida*"residuals_$(distribution)_carga.png")
 
 plot_acf_residuals(residuals, distribution)
