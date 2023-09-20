@@ -1,8 +1,8 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.8.5"
+julia_version = "1.8.3"
 manifest_format = "2.0"
-project_hash = "ba224f6184bca7b3490cd216691e97f75b3a8388"
+project_hash = "09cf796d359c6613439f9317dc9362d588097abc"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
@@ -59,7 +59,7 @@ version = "4.9.0"
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "1.0.1+0"
+version = "0.5.2+0"
 
 [[deps.ConstructionBase]]
 deps = ["LinearAlgebra"]

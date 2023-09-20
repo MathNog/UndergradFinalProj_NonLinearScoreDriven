@@ -184,6 +184,36 @@ dict_series["vazao"]["dates"] = vazao[:,:Data]
 
 plot(dict_series["ena"]["dates"],dict_series["ena"]["values"])
 
+
+
+y = dict_series["carga"]["values"][1:end-12]
+
+T = length(y)
+
+function likelihood(y, α, a, b)
+    n = length(y)
+    likelihood_value = 1.0
+    for i in 1:n
+        β_i = a + b * i  # Linear trend for β
+        likelihood_value *= pdf(Gamma(α, β_i), y[i])
+    end
+    return likelihood_value
+end
+
+
+
+
+model = JuMP.Model(Ipopt.Optimizer)
+# Define the shape (α) and rate (β) as variables to be optimized
+@variable(model, α >= 1e-4)  # Ensure α is positive
+@variable(model, λ >= 1e-4)   # Ensure β is positive
+# Maximize the log-likelihood function
+@NLobjective(model, Max, sum(-log(Γ(α)) - α*log(1/α) - α*log(λ) +(α-1)*log(y[i]) - (α/λ)*y[i] for i in 1:T))
+# Solve the optimization problem
+optimize!(model)
+
+JuMP.value.(α)
+
 " ----- GAS-CNO Normal ----- "
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
