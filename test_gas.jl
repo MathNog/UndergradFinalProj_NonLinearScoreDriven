@@ -1,7 +1,7 @@
 using JuMP, Ipopt, CSV, DataFrames, Dates, Parameters, Plots, MLJBase, Statistics
 using StatsBase, UnPack
 using ARCHModels, HypothesisTests
-using StatsPlots, Distributions
+using StatsPlots, Distributions, SpecialFunctions
 
 import Pkg
 Pkg.activate(".")
@@ -12,6 +12,10 @@ include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
 function MAPE(A, F)
     return 100*mean(abs.((A .- F)./F))
+end
+
+function Γ(x)
+    return SpecialFunctions.gamma(x)
 end
 
 current_path = pwd()
@@ -185,35 +189,6 @@ dict_series["vazao"]["dates"] = vazao[:,:Data]
 plot(dict_series["ena"]["dates"],dict_series["ena"]["values"])
 
 
-
-y = dict_series["carga"]["values"][1:end-12]
-
-T = length(y)
-
-function likelihood(y, α, a, b)
-    n = length(y)
-    likelihood_value = 1.0
-    for i in 1:n
-        β_i = a + b * i  # Linear trend for β
-        likelihood_value *= pdf(Gamma(α, β_i), y[i])
-    end
-    return likelihood_value
-end
-
-
-
-
-model = JuMP.Model(Ipopt.Optimizer)
-# Define the shape (α) and rate (β) as variables to be optimized
-@variable(model, α >= 1e-4)  # Ensure α is positive
-@variable(model, λ >= 1e-4)   # Ensure β is positive
-# Maximize the log-likelihood function
-@NLobjective(model, Max, sum(-log(Γ(α)) - α*log(1/α) - α*log(λ) +(α-1)*log(y[i]) - (α/λ)*y[i] for i in 1:T))
-# Solve the optimization problem
-optimize!(model)
-
-JuMP.value.(α)
-
 " ----- GAS-CNO Normal ----- "
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
@@ -238,13 +213,14 @@ random_walk_slope = Dict(1=>true,2=>false)
 ar = Dict(2 => false,1=>false)
 seasonality = Dict(1=>12)
 robust = false
-d = 0.5
-α = 0.5
+stochastic = false
+d = 1.0
 
 num_scenarious = 500
 
-gas_model = UnobservedComponentsGAS.GASModel(dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust)
-fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; initial_values = missing, α = α)
+gas_model = UnobservedComponentsGAS.GASModel(dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust,stochastic)
+# fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; initial_values = missing)
+fitted_model = UnobservedComponentsGAS.auto_gas(gas_model, y_train, 12)
 
 residuals = get_residuals(fitted_model, distribution, y_train)
 forecast = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious)
@@ -373,16 +349,18 @@ random_walk_slope = Dict(1=>true)
 ar = Dict(1=>false)
 seasonality = Dict(1=>12)
 robust = false
-d = 1.0
+d = 0.0
 α = 0.5
+stochastic = false
 num_scenarious = 500
 
-gas_model = UnobservedComponentsGAS.GASModel(dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust)
-fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; initial_values = missing, α = α)
+gas_model = UnobservedComponentsGAS.GASModel(dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic)
+# fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; initial_values = missing, α = α)
+fitted_model = UnobservedComponentsGAS.auto_gas(gas_model, y_train, 12)[1]
 
 residuals = get_residuals(fitted_model, distribution, y_train)
 forecast = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious)
-        
+
 
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 path_saida = current_path*"\\Saidas\\Benchmark\\$distribution\\"

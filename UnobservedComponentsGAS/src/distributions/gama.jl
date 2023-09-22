@@ -89,6 +89,14 @@ function logpdf_gama(param, y)
 end
 
 "
+Evaluate the cdf of a Gamma distribution with α,λ, in observation y.
+"
+function cdf_gama(param::Vector{Float64}, y::Fl) where Fl
+
+    return Distributions.cdf(Distributions.Gamma(param[2], param[1]/param[2]), y)
+end
+
+"
 Returns the code of the Normal distribution. Is the key of DICT_CODE.
 "
 function get_dist_code(dist::GammaDistribution)
@@ -122,11 +130,26 @@ function check_positive_constrainst(dist::GammaDistribution)
 end
 
 
+function get_initial_α(y::Vector{Float64})
+
+    T = length(y)
+    model = JuMP.Model(Ipopt.Optimizer)
+    set_silent(model)
+    @variable(model, α >= 1e-4)  # Ensure α is positive
+    @variable(model, λ[1:T] .>= 1e-4)
+    register(model, :Γ, 1, Γ; autodiff = true)
+    @NLobjective(model, Max, sum(-log(Γ(α)) - α*log(1/α) - α*log(λ[i]) +(α-1)*log(y[i]) - (α/λ[i])*y[i] for i in 1:T))
+    optimize!(model)
+    if has_values(model)
+        return JuMP.value.(α)
+    else
+        return fit_mle(Gamma, y).α
+    end 
+end
+
 "
 Returns a dictionary with the initial values of the parameters of Normal distribution that will be used in the model initialization.
 "
-
-"ERRO ---- Quem eu devo colocar como parametros iniciais????????"
 function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, dist::GammaDistribution) where Fl
 
     println("Inicialização dos parâmetros iniciais")
@@ -153,7 +176,7 @@ function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, di
     else
         println("α = λ²/var(diff(y))")
         # println(mean(y)^2/var(diff(y)) )
-        initial_params[2] = fitted_distribution.α#mean(y)^2/var((y)) 
+        initial_params[2] = get_initial_α(y)#mean(y)^2/var((y)) 
     end
     # println(length(initial_params))
     # println([size(i) for i in values(initial_params)])

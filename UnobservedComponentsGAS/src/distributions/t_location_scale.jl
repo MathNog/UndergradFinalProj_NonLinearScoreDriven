@@ -56,6 +56,12 @@ function logpdf_tlocationscale(param, y)
     return log(gamma((param[3] + 1)/2)) - log(gamma(param[3]/2)) - (1/2)*log(π*param[3]*param[2]) - (param[3] + 1)/2 * log(1 + ((y - param[1])^2)/(param[3]*param[2]))
 end
 
+"Evaluate the CDF t location scale distribution with mean μ, scale parameter σ² and ν degrees of freedom, in observation y"
+function cdf_tlocationscale(param::Vector{Float64}, y::Fl) where Fl
+
+    return Distributions.cdf(TDist(param[3]), (y - param[1]) / sqrt(param[2]))
+end
+
 "
 Returns the code of the t location scale distribution. Is the key of DICT_CODE.
 "
@@ -390,5 +396,3 @@ function fit_tlocationscale_local_search(gas_model::GASModel, y::Vector{Fl}, X::
 
     return best_model#, historic_aicc
 end
-
-
