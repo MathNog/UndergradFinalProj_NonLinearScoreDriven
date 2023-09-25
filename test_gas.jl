@@ -183,12 +183,14 @@ dict_series["ena"]["values"] = ena[:,:ENA]
 dict_series["ena"]["dates"] = ena[:,:Data]
 dict_series["carga"]["values"] = carga[:,:Carga]
 dict_series["carga"]["dates"] = carga[:,:Data]
-dict_series["vazao"]["values"] = parse.(Float64,replace.(vazao[:,:Vazao],","=>"."))
+dict_series["vazao"]["values"] = round.(vazao[:,:Vazao],digits=2)
 dict_series["vazao"]["dates"] = vazao[:,:Data]
 
-plot(dict_series["ena"]["dates"],dict_series["ena"]["values"])
 
-
+p1 = plot(dict_series["vazao"]["dates"],dict_series["vazao"]["values"],label="")
+p2 = histogram(dict_series["vazao"]["values"], bins=25,label="")
+plot(p1,p2, layout = (2,1) , plot_title="Série de Vazão e seu histograma")
+savefig(current_path*"\\Saidas\\Relatorio\\SeriesTestes\\vazao.png")
 " ----- GAS-CNO Normal ----- "
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
@@ -273,18 +275,23 @@ dates_test = dates[len_train+1:end]
 
 distribution = "LogNormal"
 dist = UnobservedComponentsGAS.NormalDistribution(missing, missing)
-time_varying_params = [false, true]
-random_walk = Dict(1 => false, 2=>true)
-random_walk_slope = Dict(1 => false, 2=>false)
+time_varying_params = [true, false]
+random_walk = Dict(2 => false, 1=>false)
+random_walk_slope = Dict(1 => true, 2=>false)
 ar = Dict(1 => false, 2 => false)
-seasonality = Dict(1 => false, 2=>false)
+seasonality = Dict(1 => 12)
 robust = false
+stochastic = false
 d = 1.0
 α = 0.5
 num_scenarious = 500
 
-gas_model = UnobservedComponentsGAS.GASModel(dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust)
-fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; initial_values = missing, α = α)
+# gas_model = UnobservedComponentsGAS.GASModel(dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic)
+# fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; initial_values = missing, α = α)
+
+gas_model = UnobservedComponentsGAS.GASModel(dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic)
+auto_gas_output = UnobservedComponentsGAS.auto_gas(gas_model, y_train, 12)
+fitted_model = auto_gas_output[1]
 
 residuals = get_residuals(fitted_model, distribution, y_train)
 forecast = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious)
@@ -332,7 +339,7 @@ include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 y = dict_series["carga"]["values"]
 dates = dict_series["carga"]["dates"]
 
-steps_ahead = 12
+steps_ahead = 1
 len_train = length(y) - steps_ahead
 
 y_train = y[1:len_train]
@@ -349,14 +356,18 @@ random_walk_slope = Dict(1=>true)
 ar = Dict(1=>false)
 seasonality = Dict(1=>12)
 robust = false
-d = 0.0
+d = 1.0
 α = 0.5
 stochastic = false
 num_scenarious = 500
 
 gas_model = UnobservedComponentsGAS.GASModel(dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic)
-# fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; initial_values = missing, α = α)
-fitted_model = UnobservedComponentsGAS.auto_gas(gas_model, y_train, 12)[1]
+fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train)
+
+gas_model = UnobservedComponentsGAS.GASModel(dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic)
+auto_gas_output = UnobservedComponentsGAS.auto_gas(gas_model, y_train, 12)
+auto_gas_output
+fitted_model = auto_gas_output[1]
 
 residuals = get_residuals(fitted_model, distribution, y_train)
 forecast = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious)
