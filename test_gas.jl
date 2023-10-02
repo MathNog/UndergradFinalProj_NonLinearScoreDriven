@@ -213,7 +213,7 @@ savefig(current_path*"\\Saidas\\Relatorio\\SeriesTestes\\vazao.png")
 
 " ----- GAS-CNO LogNormal ------ "
 
-serie = "carga"
+serie = "vazao"
 y = log.(dict_series[serie]["values"])
 dates = dict_series[serie]["dates"]
 
