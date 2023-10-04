@@ -291,10 +291,11 @@ CSV.write(path_saida*"$(serie)_mapes.csv",mapes)
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-y = dict_series["carga"]["values"]
-dates = dict_series["carga"]["dates"]
+serie = "carga"
+y = dict_series[serie]["values"]
+dates = dict_series[serie]["dates"]
 
-steps_ahead = 1
+steps_ahead = 12
 len_train = length(y) - steps_ahead
 
 y_train = y[1:len_train]
@@ -311,39 +312,40 @@ random_walk_slope = Dict(1=>true)
 ar = Dict(1=>false)
 seasonality = Dict(1=>12)
 robust = false
-d = 1.0
-α = 0.5
+d = 0.0
 stochastic = false
 num_scenarious = 500
 
-gas_model = UnobservedComponentsGAS.GASModel(dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic)
-fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train)
+# gas_model = UnobservedComponentsGAS.GASModel(dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic)
+# fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train)
 
-gas_model = UnobservedComponentsGAS.GASModel(dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic)
-auto_gas_output = UnobservedComponentsGAS.auto_gas(gas_model, y_train, 12)
+gas_model = UnobservedComponentsGAS.GASModel(dist, time_varying_params, missing, random_walk, random_walk_slope, ar, seasonality, robust, stochastic)
+auto_gas_output = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
 auto_gas_output
 fitted_model = auto_gas_output[1]
 
 residuals = get_residuals(fitted_model, distribution, y_train)
 forecast = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious)
 
+fitted_model.components["param_1"]["level"]
 
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 path_saida = current_path*"\\Saidas\\Benchmark\\$distribution\\"
 recover_scale = false
-plot_fit_in_sample(fitted_model, dates_train, y_train, distribution, recover_scale)
+
+plot_fit_in_sample(fitted_model, dates_train, y_train, distribution, recover_scale, serie)
 savefig(path_saida*"$(serie)_fit_in_sample_$(distribution)_carga.png")
 
-plot_forecast(fitted_model, forecast, y_test, dates_test, distribution, residuals, recover_scale)
+plot_forecast(fitted_model, forecast, y_test, dates_test, distribution, residuals, recover_scale, serie)
 savefig(path_saida*"$(serie)_forecast_$(distribution)_carga.png")
 
-plot_residuals(residuals, dates_train, distribution, true)
+plot_residuals(residuals, dates_train, distribution, true, serie)
 savefig(path_saida*"$(serie)_residuals_$(distribution)_carga.png")
 
-plot_acf_residuals(residuals, distribution)
+plot_acf_residuals(residuals, distribution, serie)
 savefig(path_saida*"$(serie)_residuals_acf_$(distribution)_carga.png")
 
-plot_residuals_histogram(residuals,distribution)
+plot_residuals_histogram(residuals,distribution, serie)
 savefig(path_saida*"$(serie)_residuals_histogram_$(distribution)_carga.png")
 
 residuals_diagnostics_05 = get_residuals_diagnostics(residuals, 0.05, fitted_model)
@@ -352,10 +354,11 @@ CSV.write(path_saida*"$(serie)_residuals_diagnostics_05.csv",residuals_diagnosti
 residuals_diagnostics_01 = get_residuals_diagnostics(residuals, 0.01, fitted_model)
 CSV.write(path_saida*"$(serie)_residuals_diagnostics_01.csv",residuals_diagnostics_01)
 
-plot_components(fitted_model, dates_train, distribution, "param_1", recover_scale, residuals)
+plot_components(fitted_model, dates_train, distribution, "param_1", recover_scale, residuals, serie)
 savefig(path_saida*"$(serie)_components_$(distribution)_carga.png")
 
-plot_qqplot(residuals, distribution)
+plot_qqplot(residuals, distribution, serie)
 savefig(path_saida*"$(serie)_qqplot_$(distribution)_carga.png")
 
-
+mapes = get_mapes(y_train, y_test, fitted_model, forecast, residuals ,recover_scale)
+CSV.write(path_saida*"$(serie)_mapes.csv",mapes)
