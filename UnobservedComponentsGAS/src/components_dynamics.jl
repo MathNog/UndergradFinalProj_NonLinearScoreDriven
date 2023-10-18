@@ -43,7 +43,7 @@ function add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Dict{Int64, Int64
     @variable(model, ϕ[1:max_order, idx_params])
     @variable(model, κ_AR[idx_params])
 
-    @constraint(model, [i in idx_params], 1e-4 ≤ κ_AR[i])
+    @constraint(model, [i in idx_params], 1e-4 ≤ κ_AR[i] ≤ 1.)
 
     for i in unique_orders
         for j in eachindex(idx_params)
@@ -71,8 +71,8 @@ function add_random_walk_slope!(model::Ml, s::Vector{Fl}, T::Int64, random_walk_
 
     @NLconstraint(model, [t = 2:T, j in idx_params], b[t, j] == b[t - 1, j] + κ_b[j] * s[j][t])
     @NLconstraint(model, [t = 2:T, j in idx_params], RWS[t, j] == RWS[t - 1, j] + b[t - 1, j] + κ_RWS[j] * s[j][t])
-    @constraint(model, [j in idx_params], 1e-4 ≤ κ_RWS[j])
-    @constraint(model, [j in idx_params], 1e-4 ≤ κ_b[j])
+    @constraint(model, [j in idx_params], 1e-4 ≤ κ_RWS[j] ≤ 1.)
+    @constraint(model, [j in idx_params], 1e-4 ≤ κ_b[j] ≤ 1.)
 end
 
 "
@@ -86,7 +86,7 @@ function add_random_walk!(model::Ml, s::Vector{Fl}, T::Int64, random_walk::Dict{
     @variable(model, κ_RW[idx_params])
 
     @NLconstraint(model, [t = 2:T, j in idx_params], RW[t, j] == RW[t-1, j] + κ_RW[j] * s[j][t])
-    @constraint(model, [j in idx_params], 1e-4 ≤ κ_RW[j])
+    @constraint(model, [j in idx_params], 1e-4 ≤ κ_RW[j] ≤ 1.)
 end
 
 "
@@ -121,7 +121,7 @@ function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seas
     unique_num_harmonic = unique(num_harmonic)[1]
     @variable(model, S[1:T, idx_params])
     @variable(model, κ_S[idx_params])
-    @constraint(model, [i in idx_params], 1e-4 ≤ κ_S[i])
+    @constraint(model, [i in idx_params], 1e-4 ≤ κ_S[i] ≤ 1.)
 
     if stochastic
         @variable(model, γ[1:unique_num_harmonic, 1:T, idx_params])

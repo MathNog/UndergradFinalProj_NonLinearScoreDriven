@@ -71,7 +71,7 @@ Evaluate the log pdf of a Normal distribution with mean μ and variance σ², in
 function logpdf_gama(λ, α, y)
 
     # println("--------- LogPDF ---------------")
-    # println(logpdf_gama([α, λ], y))
+    # println(logpdf_gama([λ, α], y))
     return logpdf_gama([λ, α], y)
 end
 
