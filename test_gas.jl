@@ -46,19 +46,24 @@ function get_number_parameters(fitted_model)
     return K
 end
 
-function get_residuals(fitted_model, model, y)
+function get_residuals(fitted_model, model, y, standarize)
     if model == "Normal"
-        return fitted_model.residuals["std_residuals"]
+        return fitted_model.residuals["std_residuals"][2:end]
     else
-        return y .- fitted_model.fit_in_sample
+        r = (y .- fitted_model.fit_in_sample)[2:end]
+        if standarize
+            return (r.-mean(r))./std(r)
+        else
+            return r
+        end
     end
 end
 
 function plot_residuals(residuals, dates, model, std_bool, serie)
-    std_bool==true ? res = (residuals.-mean(residuals))./std(residuals) : res = residuals
+    # std_bool==true ? res = (residuals.-mean(residuals))./std(residuals) : res = residuals
     std_bool==true ? std_title = "Padronizados" : std_title = ""
     plot(title="Resíduos $std_title $model - $serie")
-    plot!(dates[2:end], res[2:end] , label="Resíduos")
+    plot!(dates[2:end], residuals , label="Resíduos")
 end
 
 function plot_acf_residuals(residuals, model, serie)
@@ -102,7 +107,7 @@ function plot_residuals_histogram(residuals, model, serie)
     histogram(residuals[2:end], title="Histograma Residuos $model - $serie", label="")
 end
 
-function plot_fit_in_sample(fitted_model, fit_dates, y_train, model, recover_scale, serie)
+function plot_fit_in_sample(fitted_model, fit_dates, y_train, model, recover_scale, residuals, serie)
     
     fit_in_sample = fitted_model.fit_in_sample[2:end]
     if recover_scale
@@ -192,12 +197,12 @@ function plot_diagnosis(residuals, dates, model, std_bool, serie)
     qq = plot(qqplot(Normal, residuals))
     qq = plot!(title="QQPlot Residuos")
 
-    h = histogram(residuals[2:end], title="Histograma Residuos", label="")
+    h = histogram(residuals, title="Histograma Residuos", label="")
 
-    std_bool==true ? res = (residuals.-mean(residuals))./std(residuals) : res = residuals
+    # std_bool==true ? res = (residuals.-mean(residuals))./std(residuals) : res = residuals
     std_bool==true ? std_title = "Padronizados" : std_title = ""
     r = plot(title="Resíduos $std_title")
-    r = plot!(dates[2:end], res[2:end] , label="Resíduos")
+    r = plot!(dates[2:end], residuals , label="Resíduos")
 
     acf_values = autocor(residuals[2:end])
     lag_values = collect(0:length(acf_values) - 1)
@@ -286,15 +291,15 @@ dates_test = dates[len_train+1:end]
 distribution = "LogNormal"
 dist = UnobservedComponentsGAS.NormalDistribution(missing, missing)
 
-DICT_MODELS = Dict("carga"=>UnobservedComponentsGAS.GASModel(dist, [true, false], 0.5, Dict(2 => false, 1=>false),  
-                                                        Dict(1 => true, 2=>false),  Dict(1 => false, 2 => false), 
-                                                        Dict(1 => 12), false, true),
+DICT_MODELS = Dict("carga"=>UnobservedComponentsGAS.GASModel(dist, [true, false], 1.0, Dict(1=>false),  
+                                                        Dict(1 => true),  Dict(1 => false), 
+                                                        Dict(1 => 12), false, false),
                     "vazao"=>UnobservedComponentsGAS.GASModel(dist, [true, false], 1.0, Dict(2 => false, 1=>false),  
                                                             Dict(1 => true, 2=>false),  Dict(1 => false, 2 => false), 
                                                             Dict(1 => 12), false, false),
-                    "ena"=>UnobservedComponentsGAS.GASModel(dist, [true, false], 1.0, Dict(2 => false, 1=>false), 
-                                                            Dict(2 => false, 1=>false), Dict(1 => 2), 
-                                                            Dict(1 => 12), false, true))
+                    "ena"=>UnobservedComponentsGAS.GASModel(dist, [true, false], 0.0, Dict(1=>false), 
+                                                            Dict(1=>false), Dict(1 => 1), 
+                                                            Dict(1 => 12), false, false))
 
 num_scenarious = 500
 
@@ -305,18 +310,19 @@ fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train)
 # auto_gas_output = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
 # fitted_model = auto_gas_output[1]
 
-residuals = get_residuals(fitted_model, distribution, y_train)
+std_residuals = get_residuals(fitted_model, distribution, y_train, true)
+residuals = get_residuals(fitted_model, distribution, y_train, false)
 forecast = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious)
         
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 
-recover_scale = false
+recover_scale = true
 
 recover_scale ? scale="Original" : scale="Log"
 
 path_saida = current_path*"\\Saidas\\Benchmark\\$distribution\\$scale\\"
 
-plot_fit_in_sample(fitted_model, dates_train, y_train, distribution, recover_scale, serie)
+plot_fit_in_sample(fitted_model, dates_train, y_train, distribution, recover_scale, residuals, serie)
 savefig(path_saida*"$(serie)_fit_in_sample_$(distribution).png")
 
 plot_forecast(fitted_model, forecast, y_test, dates_test, distribution, residuals, recover_scale, serie)
@@ -325,13 +331,13 @@ savefig(path_saida*"$(serie)_forecast_$(distribution).png")
 plot_fit_forecast(fitted_model, forecast, dates_train, y_train, y_test, dates_test, distribution, residuals, recover_scale, serie)
 savefig(path_saida*"$(serie)_fit_forecast_$(distribution).png")
 
-plot_residuals(residuals, dates_train, distribution, true, serie)
+plot_residuals(std_residuals, dates_train, distribution, true, serie)
 savefig(path_saida*"$(serie)_residuals_$(distribution).png")
 
-plot_acf_residuals(residuals, distribution, serie)
+plot_acf_residuals(std_residuals, distribution, serie)
 savefig(path_saida*"$(serie)_residuals_acf_$(distribution).png")
 
-plot_residuals_histogram(residuals,distribution, serie)
+plot_residuals_histogram(std_residuals,distribution, serie)
 savefig(path_saida*"$(serie)_residuals_histogram_$(distribution).png")
 
 residuals_diagnostics_05 = get_residuals_diagnostics(residuals, 0.05, fitted_model)
@@ -343,10 +349,10 @@ CSV.write(path_saida*"$(serie)_residuals_diagnostics_01.csv",residuals_diagnosti
 plot_components(fitted_model, dates_train, distribution, "param_1", recover_scale, residuals, serie)
 savefig(path_saida*"$(serie)_components_$(distribution).png")
 
-plot_qqplot(residuals, distribution, serie)
+plot_qqplot(std_residuals, distribution, serie)
 savefig(path_saida*"$(serie)_qqplot_$(distribution).png")
 
-plot_diagnosis(residuals, dates_train, distribution, true, serie)
+plot_diagnosis(std_residuals, dates_train, distribution, true, serie)
 savefig(path_saida*"$(serie)_diagnosticos_$(distribution).png")
 
 mapes = get_mapes(y_train, y_test, fitted_model, forecast, residuals ,recover_scale)
@@ -373,14 +379,14 @@ dates_test = dates[len_train+1:end]
 
 distribution = "Gamma"
 dist = UnobservedComponentsGAS.GammaDistribution(missing, missing)
-DICT_MODELS = Dict("carga"=>UnobservedComponentsGAS.GASModel(dist, [true, false], 0.0, Dict(2 => false, 1=>false),  
-                                                        Dict(1 => true, 2=>false),  Dict(1 => false, 2 => false), 
-                                                        Dict(1 => 12), false, true),
+DICT_MODELS = Dict("carga"=>UnobservedComponentsGAS.GASModel(dist, [true, false], 0.0, Dict(1=>false),  
+                                                        Dict(1 => true),  Dict(1 => false), 
+                                                        Dict(1 => 12), false, false),
                     "vazao"=>UnobservedComponentsGAS.GASModel(dist, [true, false], 1.0, Dict(2 => false, 1=>false),  
                                                             Dict(1 => true, 2=>false),  Dict(1 => false, 2 => false), 
                                                             Dict(1 => 12), false, false),
-                    "ena"=>UnobservedComponentsGAS.GASModel(dist, [true, false], 1.0, Dict(2 => false, 1=>false), 
-                                                            Dict(2 => false, 1=>false), Dict(1 => true, 2 => false), 
+                    "ena"=>UnobservedComponentsGAS.GASModel(dist, [true, false], 0.5, Dict(1=>false), 
+                                                            Dict(1=>false), Dict(1 => 1), 
                                                             Dict(1 => 12), false, false))
 
 num_scenarious = 500
@@ -393,7 +399,8 @@ fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train)
 # auto_gas_output
 # fitted_model = auto_gas_output[1]
 
-residuals = get_residuals(fitted_model, distribution, y_train)
+residuals = get_residuals(fitted_model, distribution, y_train, false)
+std_residuals = get_residuals(fitted_model, distribution, y_train, true)
 forecast = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious)
 
 fitted_model.fit_in_sample = denormalize_data(fitted_model.fit_in_sample, y)
@@ -406,19 +413,22 @@ path_saida = current_path*"\\Saidas\\Benchmark\\$distribution\\"
 recover_scale = false
 
 plot_fit_in_sample(fitted_model, dates_train, y_train, distribution, recover_scale, serie)
-savefig(path_saida*"$(serie)_fit_in_sample_$(distribution)_carga.png")
+savefig(path_saida*"$(serie)_fit_in_sample_$(distribution).png")
 
 plot_forecast(fitted_model, forecast, y_test, dates_test, distribution, residuals, recover_scale, serie)
-savefig(path_saida*"$(serie)_forecast_$(distribution)_carga.png")
+savefig(path_saida*"$(serie)_forecast_$(distribution).png")
 
-plot_residuals(residuals, dates_train, distribution, true, serie)
-savefig(path_saida*"$(serie)_residuals_$(distribution)_carga.png")
+plot_fit_forecast(fitted_model, forecast, dates_train, y_train, y_test, dates_test, distribution, residuals, recover_scale, serie)
+savefig(path_saida*"$(serie)_fit_forecast_$(distribution).png")
 
-plot_acf_residuals(residuals, distribution, serie)
-savefig(path_saida*"$(serie)_residuals_acf_$(distribution)_carga.png")
+plot_residuals(std_residuals, dates_train, distribution, true, serie)
+savefig(path_saida*"$(serie)_residuals_$(distribution).png")
 
-plot_residuals_histogram(residuals,distribution, serie)
-savefig(path_saida*"$(serie)_residuals_histogram_$(distribution)_carga.png")
+plot_acf_residuals(std_residuals, distribution, serie)
+savefig(path_saida*"$(serie)_residuals_acf_$(distribution).png")
+
+plot_residuals_histogram(std_residuals,distribution, serie)
+savefig(path_saida*"$(serie)_residuals_histogram_$(distribution).png")
 
 residuals_diagnostics_05 = get_residuals_diagnostics(residuals, 0.05, fitted_model)
 CSV.write(path_saida*"$(serie)_residuals_diagnostics_05.csv",residuals_diagnostics_05)
@@ -427,13 +437,17 @@ residuals_diagnostics_01 = get_residuals_diagnostics(residuals, 0.01, fitted_mod
 CSV.write(path_saida*"$(serie)_residuals_diagnostics_01.csv",residuals_diagnostics_01)
 
 plot_components(fitted_model, dates_train, distribution, "param_1", recover_scale, residuals, serie)
-savefig(path_saida*"$(serie)_components_$(distribution)_carga.png")
+savefig(path_saida*"$(serie)_components_$(distribution).png")
 
-plot_qqplot(residuals, distribution, serie)
-savefig(path_saida*"$(serie)_qqplot_$(distribution)_carga.png")
+plot_qqplot(std_residuals, distribution, serie)
+savefig(path_saida*"$(serie)_qqplot_$(distribution).png")
+
+plot_diagnosis(std_residuals, dates_train, distribution, true, serie)
+savefig(path_saida*"$(serie)_diagnosticos_$(distribution).png")
 
 mapes = get_mapes(y_train, y_test, fitted_model, forecast, residuals ,recover_scale)
 CSV.write(path_saida*"$(serie)_mapes.csv",mapes)
+
 
 
 " AutoARIMA Benchmark"
