@@ -59,7 +59,6 @@ function compute_score(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, d::Floa
     s = Vector(undef, num_time_varying_params)
 
     if num_param == 2
-        println(idx_time_varying_params)
         register(model, :scaled_score, 6, scaled_score; autodiff = true)
         for i in idx_time_varying_params
             s[i] = @NLexpression(model,[t = 2:T], scaled_score(parameters[t-1, 1], parameters[t-1, 2], y[t-1], d, dist_code, i))
@@ -90,7 +89,7 @@ Includes the complete dynamic for the time-varying parameters in the JuMP model.
 "
 function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASModel, X::Union{Matrix, Missing}, T::Int64) where {Ml, Gl}
 
-    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust = gas_model
+    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
     
     idx_time_varying_params = get_idxs_time_varying_params(time_varying_params) 
 
@@ -154,4 +153,3 @@ function include_objective_function!(model::Ml, parameters::Matrix{Gl}, y::Vecto
     end
     
 end
-

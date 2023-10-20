@@ -21,6 +21,7 @@ mutable struct GASModel
     ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}}
     seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}
     robust::Bool
+    stochastic::Bool
 
     function GASModel(dist::ScoreDrivenDistribution,
                         time_varying_params::Vector{Bool},
@@ -29,7 +30,7 @@ mutable struct GASModel
                         random_walk_slope::Dict{Int64, Bool}, 
                         ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}},
                         seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}},
-                        robust::Bool)
+                        robust::Bool, stochastic::Bool)
 
         num_params = length(time_varying_params)
 
@@ -65,7 +66,7 @@ mutable struct GASModel
             end
         end
 
-        return new(dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust)   
+        return new(dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic)   
     end
 end
 
