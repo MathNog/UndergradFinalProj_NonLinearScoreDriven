@@ -9,15 +9,14 @@ module UnobservedComponentsGAS
     using Random 
     using SpecialFunctions
     using Optim
-    using SpecialFunctions
      
     include("../NonParametricStructuralModels/src/NonParametricStructuralModels.jl")
 
     include("structures.jl")
     include("distributions/common.jl")
     include("distributions/normal.jl")
-    include("distributions/t_location_scale.jl")
     include("distributions/gama.jl")
+    include("distributions/t_location_scale.jl")
     include("initialization.jl")
     include("fit.jl")
     include("utils.jl")
@@ -28,7 +27,7 @@ module UnobservedComponentsGAS
 
     const DICT_CODE = Dict(1 => "Normal",
                            2 => "tLocationScale",
-                           3 => "Gamma")
+                           3 => "Gamma" )
 
     const DICT_SCORE = Dict("Normal"         => score_normal,
                             "tLocationScale" => score_tlocationscale,
@@ -41,4 +40,8 @@ module UnobservedComponentsGAS
     const DICT_LOGPDF = Dict("Normal"         => logpdf_normal,
                              "tLocationScale" => logpdf_tlocationscale,
                              "Gamma"          => logpdf_gama)
+
+    const DICT_CDF = Dict("Normal"         => cdf_normal,
+                          "tLocationScale" => cdf_tlocationscale,
+                          "Gamma"          => cdf_gama)
 end 

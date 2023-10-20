@@ -5,7 +5,7 @@ Returns a dictionary with the fitted hyperparameters and components.
 "
 function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Matrix{Fl}}) where {Ml,  Fl} 
     
-    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust = gas_model
+    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
 
     idx_params = get_idxs_time_varying_params(time_varying_params)
 
@@ -78,19 +78,20 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
 
 end
 
-"
-Returns the residuals of the fitted model.
-"
-function get_residuals(y::Vector{Float64}, fit_in_sample::Vector{Float64}, fitted_params::Dict{String, Vector{Float64}}, dist_code::Int64)
-
-    T = length(y)
-    num_params = length(fitted_params)  ## COMO É ESSA CONTA?
-
-    # Getting std residuals
+"Compute the Standard Residuals of the fitted model"
+function get_std_residuals(y::Vector{Fl}, fit_in_sample::Vector{Fl}) where Fl
     residuals = y .- fit_in_sample
     std_res = (residuals .- mean(residuals)) / std(residuals)
 
-    # Getting Conditional Score Residuals 
+    return std_res
+end
+
+"Compute the Conditional Score Residuals of the fitted model"
+function get_cs_residuals(y::Vector{Fl}, fitted_params::Dict{String, Vector{Float64}}, dist_code::Int64) where Fl
+    
+    T = length(y)
+    num_params = length(fitted_params)  ## COMO É ESSA CONTA?
+
     cs_residuals = zeros(T, num_params)
 
     if num_params == 2
@@ -109,9 +110,50 @@ function get_residuals(y::Vector{Float64}, fit_in_sample::Vector{Float64}, fitte
         #INCLUIR CASO COM 1 PARAMETRO
     end
 
+    return cs_residuals
+end
+
+"Compute the Quantile Residuals of the fitted model"
+function get_quantile_residuals(y::Vector{Fl}, fitted_params::Dict{String, Vector{Float64}}, dist_code::Int64) where Fl
+    
+    dist_name  = DICT_CODE[dist_code]
+    T          = length(y)
+    num_params = length(fitted_params)
+
+    q_residuals = zeros(T)
+    if num_params == 2
+        for t in 1:T
+            PIT = DICT_CDF[dist_name]([fitted_params["param_1"][t],fitted_params["param_2"][t]],  y[t])
+            q_residuals[t] = quantile(Normal(0, 1), PIT)
+        end
+    elseif num_params == 3
+        for t in 1:T
+            PIT = DICT_CDF[dist_name]([fitted_params["param_1"][t],fitted_params["param_2"][t], fitted_params["param_3"][t]],  y[t])
+            q_residuals[t] = quantile(Normal(0, 1), PIT)
+        end
+    end
+
+    return q_residuals
+end
+
+"
+Returns the residuals of the fitted model.
+"
+function get_residuals(y::Vector{Float64}, fit_in_sample::Vector{Float64}, fitted_params::Dict{String, Vector{Float64}}, dist_code::Int64)
+
+    # Getting std residuals
+    std_res = get_std_residuals(y, fit_in_sample)
+
+    # Getting Conditional Score Residuals 
+    cs_residuals = get_cs_residuals(y, fitted_params, dist_code)
+
+    # Getting Quantile Residuals
+    q_residuals = get_quantile_residuals(y, fitted_params, dist_code)
+
     dict_residuals = Dict{String, Union{Vector{Float64}, Matrix{Float64}}}()
     dict_residuals["std_residuals"] = std_res
     dict_residuals["cs_residuals"]  = cs_residuals
+    dict_residuals["q_residuals"]   = q_residuals
 
     return dict_residuals
     
@@ -212,3 +254,43 @@ function fit_AR_model(y::Vector{Fl}, order::Vector{Int64}) where Fl
     return JuMP.value.(y_hat), JuMP.value.(ϕ), JuMP.value(c)
 end
 
+function fit_harmonics(y::Vector{Fl}, seasonal_period::Int64, stochastic::Bool) where {Fl}
+
+    T = length(y)
+
+    if seasonal_period % 2 == 0
+        num_harmonic = Int64(seasonal_period / 2)
+    else
+        num_harmonic = Int64((seasonal_period -1) / 2)
+    end
+
+    model = JuMP.Model(Ipopt.Optimizer)
+    set_optimizer_attribute(model, "print_level", 0)
+
+    @variable(model, y_hat[1:T])
+
+    if stochastic
+        @variable(model, γ[1:num_harmonic, 1:T])
+        @variable(model, γ_star[1:num_harmonic, 1:T])
+
+        @NLconstraint(model, [i = 1:num_harmonic, t = 2:T], γ[i, t] == γ[i, t-1] * cos(2*π*i / seasonal_period) + 
+                                                                    γ_star[i,t-1]*sin(2*π*i / seasonal_period))
+        @NLconstraint(model, [i = 1:num_harmonic, t = 2:T], γ_star[i, t] == -γ[i, t-1] * sin(2*π*i / seasonal_period) + 
+                                                                                γ_star[i,t-1]*cos(2*π*i / seasonal_period))
+
+        @constraint(model, [t = 1:T], y_hat[t] == sum(γ[i, t] for i in 1:num_harmonic))
+    else
+
+        @variable(model, γ[1:num_harmonic])
+        @variable(model, γ_star[1:num_harmonic])
+
+        @constraint(model, [t = 1:T], y_hat[t] == sum(γ[i] * cos(2 * π * i * t/seasonal_period) + 
+                                                  γ_star[i] * sin(2 * π * i* t/seasonal_period)  for i in 1:num_harmonic))
+    end
+   
+    @objective(model, Min, sum((y .- y_hat).^2))
+    optimize!(model)
+
+    return value.(γ), value.(γ_star)
+    
+end

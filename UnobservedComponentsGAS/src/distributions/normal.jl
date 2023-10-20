@@ -52,6 +52,14 @@ function logpdf_normal(param, y)
 end
 
 "
+Evaluate the cdf of a Normal distribution with mean μ and variance σ², in observation y.
+"
+function cdf_normal(param::Vector{Float64}, y::Fl) where Fl
+
+    return Distributions.cdf(Normal(param[1], sqrt(param[2])), y)
+end
+
+"
 Returns the code of the Normal distribution. Is the key of DICT_CODE.
 "
 function get_dist_code(dist::NormalDistribution)
