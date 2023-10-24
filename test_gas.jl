@@ -36,7 +36,11 @@ function get_number_parameters(fitted_model)
         for (key,value) in fitted_model.components[param]
             if key != "intercept"
                 for (key2, value2) in value["hyperparameters"]
-                    K+=length(value2)
+                    if key2 in ["γ", "γ_star"]
+                        K+=size(value2,1)
+                    else
+                        K+=length(value2)
+                    end
                 end
             else
                 K+=1
@@ -44,6 +48,22 @@ function get_number_parameters(fitted_model)
         end
     end
     return K
+end
+
+function get_parameters(fitted_model)
+    dict_params = Dict()
+    for param in keys(fitted_model.components)
+        for (key,value) in fitted_model.components[param]
+            if key != "intercept"
+                for (key2, value2) in value["hyperparameters"]
+                    if (key2 !="γ") && (key2!="γ_star")
+                        dict_params[key*"_"*key2] = value2
+                    end
+                end
+            end
+        end
+    end
+    return dict_params
 end
 
 function get_residuals(fitted_model, model, y, standarize)
@@ -110,12 +130,13 @@ end
 function plot_fit_in_sample(fitted_model, fit_dates, y_train, model, recover_scale, residuals, serie)
     
     fit_in_sample = fitted_model.fit_in_sample[2:end]
+    println(fit_in_sample)
     if recover_scale
         y_train = exp.(y_train)
         K = get_number_parameters(fitted_model)
         fit_in_sample = correct_scale(fit_in_sample, K, residuals)
     end
-
+    println(fit_in_sample)
     plot(fit_dates[2:end], y_train[2:end], label="Série")
     plot!(fit_dates[2:end], fit_in_sample[1:end], label="Fit in sample")    
     plot!(title=" Fit in sample GAS-CNO $model - $serie")
@@ -250,6 +271,7 @@ end
 " ------- Criando dicionario de Dados ------- "
 
 path_series = current_path*"\\Dados\\Tratados\\"
+DICT_MODELS = Dict()
 
 ena = CSV.read(path_series*"ena_limpo.csv",DataFrame)
 vazao = CSV.read(path_series*"vazao_limpo.csv", DataFrame)
@@ -275,15 +297,19 @@ savefig(current_path*"\\Saidas\\Relatorio\\SeriesTestes\\vazao.png")
 
 " ----- GAS-CNO LogNormal ------ "
 
+include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
+
 serie = "ena"
 y = log.(dict_series[serie]["values"])
 dates = dict_series[serie]["dates"]
 
+y_norm = normalize_data(y)
+
 steps_ahead = 12
 len_train = length(y) - steps_ahead
 
-y_train = y[1:len_train]
-y_test = y[len_train+1:end]
+y_train = y_norm[1:len_train]
+y_test = y_norm[len_train+1:end]
 
 dates_train = dates[1:len_train]
 dates_test = dates[len_train+1:end]
@@ -291,19 +317,24 @@ dates_test = dates[len_train+1:end]
 distribution = "LogNormal"
 dist = UnobservedComponentsGAS.NormalDistribution(missing, missing)
 
-DICT_MODELS = Dict("carga"=>UnobservedComponentsGAS.GASModel(dist, [true, false], 1.0, Dict(1=>false),  
+
+DICT_MODELS["LogNormal"] = Dict() 
+
+DICT_MODELS["LogNormal"]["carga"]=UnobservedComponentsGAS.GASModel(dist, [true, false], 1.0, Dict(1=>false),  
                                                         Dict(1 => true),  Dict(1 => false), 
-                                                        Dict(1 => 12), false, false),
-                    "vazao"=>UnobservedComponentsGAS.GASModel(dist, [true, false], 1.0, Dict(2 => false, 1=>false),  
+                                                        Dict(1 => 12), false, true)
+
+DICT_MODELS["LogNormal"]["vazao"]=UnobservedComponentsGAS.GASModel(dist, [true, false], 1.0, Dict(2 => false, 1=>false),  
                                                             Dict(1 => true, 2=>false),  Dict(1 => false, 2 => false), 
-                                                            Dict(1 => 12), false, false),
-                    "ena"=>UnobservedComponentsGAS.GASModel(dist, [true, false], 0.0, Dict(1=>false), 
+                                                            Dict(1 => 12), false, false)
+
+DICT_MODELS["LogNormal"]["ena"]=UnobservedComponentsGAS.GASModel(dist, [true, false], 1.0, Dict(1=>false), 
                                                             Dict(1=>false), Dict(1 => 1), 
-                                                            Dict(1 => 12), false, false))
+                                                            Dict(1 => 12), false, true)
 
 num_scenarious = 500
 
-gas_model = DICT_MODELS[serie]
+gas_model = DICT_MODELS[distribution][serie]
 fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train)
 
 # gas_model = DICT_MODELS[serie]
@@ -313,6 +344,11 @@ fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train)
 std_residuals = get_residuals(fitted_model, distribution, y_train, true)
 residuals = get_residuals(fitted_model, distribution, y_train, false)
 forecast = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious)
+
+fitted_model.fit_in_sample = denormalize_data(fitted_model.fit_in_sample, y)
+y_train = denormalize_data(y_train, y)
+y_test = denormalize_data(y_test, y)
+forecast["mean"] = denormalize_data(forecast["mean"], y)
         
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 
@@ -320,7 +356,10 @@ recover_scale = true
 
 recover_scale ? scale="Original" : scale="Log"
 
-path_saida = current_path*"\\Saidas\\Benchmark\\$distribution\\$scale\\"
+path_saida = current_path*"\\Saidas\\CombNaoLinear\\$distribution\\$scale\\"
+
+dict_params = DataFrame(get_parameters(fitted_model))
+CSV.write(path_saida*"$(serie)_params.csv",dict_params)
 
 plot_fit_in_sample(fitted_model, dates_train, y_train, distribution, recover_scale, residuals, serie)
 savefig(path_saida*"$(serie)_fit_in_sample_$(distribution).png")
@@ -362,7 +401,7 @@ CSV.write(path_saida*"$(serie)_mapes.csv",mapes)
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "carga"
+serie = "ena"
 y = dict_series[serie]["values"]
 dates = dict_series[serie]["dates"]
 
@@ -379,19 +418,25 @@ dates_test = dates[len_train+1:end]
 
 distribution = "Gamma"
 dist = UnobservedComponentsGAS.GammaDistribution(missing, missing)
-DICT_MODELS = Dict("carga"=>UnobservedComponentsGAS.GASModel(dist, [true, false], 0.0, Dict(1=>false),  
+
+DICT_MODELS[distribution] = Dict() 
+
+DICT_MODELS[distribution]["carga"]=UnobservedComponentsGAS.GASModel(dist, [true, false], 0.0, Dict(1=>false),  
                                                         Dict(1 => true),  Dict(1 => false), 
-                                                        Dict(1 => 12), false, false),
-                    "vazao"=>UnobservedComponentsGAS.GASModel(dist, [true, false], 1.0, Dict(2 => false, 1=>false),  
+                                                        Dict(1 => 12), false, true)
+
+DICT_MODELS[distribution]["vazao"]=UnobservedComponentsGAS.GASModel(dist, [true, false], 1.0, Dict(2 => false, 1=>false),  
                                                             Dict(1 => true, 2=>false),  Dict(1 => false, 2 => false), 
-                                                            Dict(1 => 12), false, false),
-                    "ena"=>UnobservedComponentsGAS.GASModel(dist, [true, false], 0.5, Dict(1=>false), 
+                                                            Dict(1 => 12), false, false)
+
+DICT_MODELS[distribution]["ena"]=UnobservedComponentsGAS.GASModel(dist, [true, false], 0.5, Dict(1=>false), 
                                                             Dict(1=>false), Dict(1 => 1), 
-                                                            Dict(1 => 12), false, false))
+                                                            Dict(1 => 12), false, true)
+
 
 num_scenarious = 500
 
-gas_model = DICT_MODELS[serie]
+gas_model = DICT_MODELS[distribution][serie]
 fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train)
 
 # gas_model = UnobservedComponentsGAS.GASModel(dist, time_varying_params, missing, random_walk, random_walk_slope, ar, seasonality, robust, stochastic)
@@ -409,10 +454,13 @@ y_test = denormalize_data(y_test, y)
 forecast["mean"] = denormalize_data(forecast["mean"], y)
 
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
-path_saida = current_path*"\\Saidas\\Benchmark\\$distribution\\"
+path_saida = current_path*"\\Saidas\\CombNaoLinear\\$distribution\\"
 recover_scale = false
 
-plot_fit_in_sample(fitted_model, dates_train, y_train, distribution, recover_scale, serie)
+dict_params = DataFrame(get_parameters(fitted_model))
+CSV.write(path_saida*"$(serie)_params.csv",dict_params)
+
+plot_fit_in_sample(fitted_model, dates_train, y_train, distribution, recover_scale, residuals, serie)
 savefig(path_saida*"$(serie)_fit_in_sample_$(distribution).png")
 
 plot_forecast(fitted_model, forecast, y_test, dates_test, distribution, residuals, recover_scale, serie)
@@ -450,70 +498,70 @@ CSV.write(path_saida*"$(serie)_mapes.csv",mapes)
 
 
 
-" AutoARIMA Benchmark"
+# " AutoARIMA Benchmark"
 
-path_saida = current_path*"\\Saidas\\Benchmark\\AutoARIMA\\"
+# path_saida = current_path*"\\Saidas\\Benchmark\\AutoARIMA\\"
 
-dict_benchmarks = Dict()
-dict_benchmarks["carga"] = Dict()
-dict_benchmarks["ena"] = Dict()
-dict_benchmarks["vazao"] = Dict()
+# dict_benchmarks = Dict()
+# dict_benchmarks["carga"] = Dict()
+# dict_benchmarks["ena"] = Dict()
+# dict_benchmarks["vazao"] = Dict()
 
-dict_benchmarks["carga"]["fit"] = CSV.read(path_series*"carga_fit_autoarima.csv",DataFrame)
-dict_benchmarks["carga"]["forecast"] = CSV.read(path_series*"carga_forecast_autoarima.csv",DataFrame)
+# dict_benchmarks["carga"]["fit"] = CSV.read(path_series*"carga_fit_autoarima.csv",DataFrame)
+# dict_benchmarks["carga"]["forecast"] = CSV.read(path_series*"carga_forecast_autoarima.csv",DataFrame)
 
-dict_benchmarks["ena"]["fit"] = CSV.read(path_series*"ena_fit_autoarima.csv",DataFrame)
-dict_benchmarks["ena"]["forecast"] = CSV.read(path_series*"ena_forecast_autoarima.csv",DataFrame)
+# dict_benchmarks["ena"]["fit"] = CSV.read(path_series*"ena_fit_autoarima.csv",DataFrame)
+# dict_benchmarks["ena"]["forecast"] = CSV.read(path_series*"ena_forecast_autoarima.csv",DataFrame)
 
-dict_benchmarks["vazao"]["fit"] = CSV.read(path_series*"vazao_fit_autoarima.csv",DataFrame)
-dict_benchmarks["vazao"]["forecast"] = CSV.read(path_series*"vazao_forecast_autoarima.csv",DataFrame)
+# dict_benchmarks["vazao"]["fit"] = CSV.read(path_series*"vazao_fit_autoarima.csv",DataFrame)
+# dict_benchmarks["vazao"]["forecast"] = CSV.read(path_series*"vazao_forecast_autoarima.csv",DataFrame)
 
-for serie in ["carga", "ena", "vazao"]
+# for serie in ["carga", "ena", "vazao"]
 
-    y = dict_series[serie]["values"]
-    dates = dict_series[serie]["dates"]
-    fit = dict_benchmarks[serie]["fit"].Values
-    dates_fit = dict_benchmarks[serie]["fit"].Data
-    prev = dict_benchmarks[serie]["forecast"].Values
-    dates_prev = dict_benchmarks[serie]["forecast"].Data
+#     y = dict_series[serie]["values"]
+#     dates = dict_series[serie]["dates"]
+#     fit = dict_benchmarks[serie]["fit"].Values
+#     dates_fit = dict_benchmarks[serie]["fit"].Data
+#     prev = dict_benchmarks[serie]["forecast"].Values
+#     dates_prev = dict_benchmarks[serie]["forecast"].Data
 
-    residuals = y[1:end-12] .- fit
-    std_residuals = (residuals .- mean(residuals))./std(residuals)
+#     residuals = y[1:end-12] .- fit
+#     std_residuals = (residuals .- mean(residuals))./std(residuals)
 
-    mape_train = round(100*MAPE(y[1:end-12],fit), digits=2)
-    mape_test = round(100*MAPE(y[end-11:end],prev), digits=2)
-    df_mapes = DataFrame(Dict("MAPE Treino"=>mape_train, "MAPE Teste"=>mape_test))
-    CSV.write(path_saida*"$(serie)_mapes.csv",df_mapes)
+#     mape_train = round(100*MAPE(y[1:end-12],fit), digits=2)
+#     mape_test = round(100*MAPE(y[end-11:end],prev), digits=2)
+#     df_mapes = DataFrame(Dict("MAPE Treino"=>mape_train, "MAPE Teste"=>mape_test))
+#     CSV.write(path_saida*"$(serie)_mapes.csv",df_mapes)
 
-    plot(title="Fit in sample AutoARIMA $serie")
-    plot!(dates, y, label="Série")
-    plot!(dates_fit, fit, label="Fit: MAPE = $mape_train%")
-    savefig(path_saida*"$(serie)_fit_autoarima.png")
+#     plot(title="Fit in sample AutoARIMA $serie")
+#     plot!(dates, y, label="Série")
+#     plot!(dates_fit, fit, label="Fit: MAPE = $mape_train%")
+#     savefig(path_saida*"$(serie)_fit_autoarima.png")
 
-    plot(title="Forecast AutoARIMA $serie")
-    plot!(dates[end-11:end], y[end-11:end], label="Série")
-    plot!(dates_prev, prev, color="red", label="Previsão: MAPE = $mape_test%")
-    savefig(path_saida*"$(serie)_forecast_autoarima.png")
+#     plot(title="Forecast AutoARIMA $serie")
+#     plot!(dates[end-11:end], y[end-11:end], label="Série")
+#     plot!(dates_prev, prev, color="red", label="Previsão: MAPE = $mape_test%")
+#     savefig(path_saida*"$(serie)_forecast_autoarima.png")
 
-    plot(title="Fit and Forecast AutoARIMA $serie")
-    plot!(dates, y, label="Série")
-    plot!(dates_fit, fit, label="Fit; MAPE = $mape_train%")
-    plot!(dates_prev, prev, color="red", label="Previsão: MAPE = $mape_test%")
-    savefig(path_saida*"$(serie)_fit_forecast_autoarima.png")
+#     plot(title="Fit and Forecast AutoARIMA $serie")
+#     plot!(dates, y, label="Série")
+#     plot!(dates_fit, fit, label="Fit; MAPE = $mape_train%")
+#     plot!(dates_prev, prev, color="red", label="Previsão: MAPE = $mape_test%")
+#     savefig(path_saida*"$(serie)_fit_forecast_autoarima.png")
 
-    qq = plot(qqplot(Normal, std_residuals))
-    qq = plot!(title="QQPlot Residuos")
-    h = histogram(std_residuals, title="Histograma Residuos", label="")
-    r = plot(title="Resíduos Padronizados")
-    r = plot!(dates_fit, std_residuals , label="Resíduos")
-    acf_values = autocor(std_residuals)
-    lag_values = collect(0:length(acf_values) - 1)
-    conf_interval = 1.96 / sqrt(length(residuals)-1)  # 95% confidence interval
-    a = plot(title="FAC dos Residuos")
-    a = plot!(autocor(std_residuals),seriestype=:stem, label="")
-    a = hline!([conf_interval, -conf_interval], line = (:red, :dash), label = "IC 95%")
-    plot(r, a, h, qq,  layout=grid(2,2), size=(1200,800), 
-        plot_title = "Diagnosticos Residuos AutoARIMA - $serie", title=["Resíduos Padronizados" "FAC dos Residuos" "Histograma Residuos" "QQPlot Residuos"])
-    savefig(path_saida*"$(serie)_diagnosticos_autoarima.png")    
-end
+#     qq = plot(qqplot(Normal, std_residuals))
+#     qq = plot!(title="QQPlot Residuos")
+#     h = histogram(std_residuals, title="Histograma Residuos", label="")
+#     r = plot(title="Resíduos Padronizados")
+#     r = plot!(dates_fit, std_residuals , label="Resíduos")
+#     acf_values = autocor(std_residuals)
+#     lag_values = collect(0:length(acf_values) - 1)
+#     conf_interval = 1.96 / sqrt(length(residuals)-1)  # 95% confidence interval
+#     a = plot(title="FAC dos Residuos")
+#     a = plot!(autocor(std_residuals),seriestype=:stem, label="")
+#     a = hline!([conf_interval, -conf_interval], line = (:red, :dash), label = "IC 95%")
+#     plot(r, a, h, qq,  layout=grid(2,2), size=(1200,800), 
+#         plot_title = "Diagnosticos Residuos AutoARIMA - $serie", title=["Resíduos Padronizados" "FAC dos Residuos" "Histograma Residuos" "QQPlot Residuos"])
+#     savefig(path_saida*"$(serie)_diagnosticos_autoarima.png")    
+# end
 
