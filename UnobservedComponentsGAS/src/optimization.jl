@@ -123,7 +123,7 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
                                 include_component_in_dynamic(model, :AR, has_AR(ar, i), t, i)) *
                                 include_component_in_dynamic(model, :S, has_seasonality(seasonality, i), t, i) + 
                                 include_explanatories_in_dynamic(model, X, has_explanatory_param, t, i)
-
+                # println(dynamic_aux[t])
             end
         end
         @NLconstraint(model,[t = 2:T], parameters[t, i] ==  dynamic_aux[t])

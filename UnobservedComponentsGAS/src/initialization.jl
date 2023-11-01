@@ -182,13 +182,31 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
         initial_values[i] = get_initial_values(initial_params[i], X_aux, has_level[i], has_slope[i], has_seasonal[i], seasonal_period[i], stochastic, order[i])
          
         # initialize the mean parameter as the sum of the initial values of the components
-        initial_params[i] = zeros(T)
-        for k in ["rw", "rws", "slope", "seasonality", "explanatories", "ar"]
-            if haskey(initial_values[i], k)
-                if k != "explanatories"
-                    initial_params[i] += initial_values[i][k]["values"]
-                else
-                    initial_params[i] += X * initial_values[i][k]
+        combination = "multiplicative"
+        if combination == "additive"
+            println("Combination $combination")
+            initial_params[i] = zeros(T)
+            for k in ["rw", "rws", "slope", "seasonality", "explanatories", "ar"]
+                if haskey(initial_values[i], k)
+                    if k != "explanatories"
+                        initial_params[i] += initial_values[i][k]["values"]
+                    else
+                        initial_params[i] += X * initial_values[i][k]
+                    end
+                end
+            end
+        else
+            println("Combination $combination")
+            initial_params[i] = ones(T)
+            for k in ["rw", "rws", "slope", "seasonality", "explanatories", "ar"]
+                if haskey(initial_values[i], k)
+                    println(k)
+                    println(initial_values[i][k]["values"])
+                    if k != "explanatories"
+                        initial_params[i] .*= initial_values[i][k]["values"]
+                    else
+                        initial_params[i] *= X * initial_values[i][k]
+                    end
                 end
             end
         end

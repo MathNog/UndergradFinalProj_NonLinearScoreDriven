@@ -329,7 +329,7 @@ DICT_MODELS["LogNormal"]["vazao"]=UnobservedComponentsGAS.GASModel(dist, [true, 
                                                             Dict(1 => 12), false, false)
 
 DICT_MODELS["LogNormal"]["ena"]=UnobservedComponentsGAS.GASModel(dist, [true, false], 1.0, Dict(1=>false), 
-                                                            Dict(1=>false), Dict(1 => 1), 
+                                                            Dict(1=>false), Dict(1 => 3), 
                                                             Dict(1 => 12), false, false)
 
 num_scenarious = 500
@@ -337,9 +337,9 @@ num_scenarious = 500
 gas_model = DICT_MODELS[distribution][serie]
 fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train)
 
-# gas_model = DICT_MODELS[serie]
-# auto_gas_output = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
-# fitted_model = auto_gas_output[1]
+gas_model = DICT_MODELS[distribution][serie]
+auto_gas_output = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
+fitted_model = auto_gas_output[1]
 
 std_residuals = get_residuals(fitted_model, distribution, y_train, true)
 residuals = get_residuals(fitted_model, distribution, y_train, false)
@@ -431,7 +431,7 @@ DICT_MODELS[distribution]["vazao"]=UnobservedComponentsGAS.GASModel(dist, [true,
 
 DICT_MODELS[distribution]["ena"]=UnobservedComponentsGAS.GASModel(dist, [true, false], 0.5, Dict(1=>false), 
                                                             Dict(1=>false), Dict(1 => 1), 
-                                                            Dict(1 => 12), false, true)
+                                                            Dict(1 => 12), false, false)
 
 
 num_scenarious = 500
