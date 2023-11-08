@@ -72,8 +72,8 @@ function add_random_walk_slope!(model::Ml, s::Vector{Fl}, T::Int64, random_walk_
 
     @NLconstraint(model, [t = 2:T, j in idx_params], b[t, j] == ϕ*b[t - 1, j] + κ_b[j] * s[j][t])
     @NLconstraint(model, [t = 2:T, j in idx_params], RWS[t, j] == RWS[t - 1, j] + b[t - 1, j] + κ_RWS[j] * s[j][t])
-    @constraint(model, [j in idx_params], 1e-4 ≤ κ_RWS[j] ≤ 10.)
-    @constraint(model, [j in idx_params], 1e-4 ≤ κ_b[j] ≤ 10.)
+    @constraint(model, [j in idx_params], 1e-1 ≤ κ_RWS[j] ≤ 10.)
+    @constraint(model, [j in idx_params], 1e-1 ≤ κ_b[j] ≤ 10.)
     @constraint(model, 1e-4 ≤ ϕ ≤ 1.)
 end
 
@@ -174,21 +174,24 @@ end
 "Include a given component to the parameters dynamic if its necessary, otherwise, return 0.
 Used in the construction of the JuMP model.
 "
-function include_component_in_dynamic(model::Ml, component::Symbol, has_component::Bool, t::Int64, idx_param::Int64) where Ml
+function include_component_in_dynamic(model::Ml, component::Symbol, has_component::Bool, t::Int64, idx_param::Int64; combination::String="additive") where Ml
 
+    # println("Combination = $combination")
     if has_component
         return model[component][t, idx_param]
     else
-        return 0
+        combination == "additive" ? r = 0 : r = 1
+        return r
     end
 end
 
 "Include explanatories to the parameters dynamic if its necessary, otherwise, return 0"
-function include_explanatories_in_dynamic(model::Ml, X::Union{Missing, Matrix{Float64}}, has_explanatories::Bool, t::Int64, idx_param::Int64) where Ml
+function include_explanatories_in_dynamic(model::Ml, X::Union{Missing, Matrix{Float64}}, has_explanatories::Bool, t::Int64, idx_param::Int64; combination::String="additive") where Ml
 
     if has_explanatories
         return X[t, :]' * model[:β][:, idx_param]
     else
-        return 0
+        combination == "additive" ? r = 0 : r = 1
+        return r
     end
 end

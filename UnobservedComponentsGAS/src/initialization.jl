@@ -1,7 +1,9 @@
-function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missing}, has_level::Bool, has_slope::Bool, has_seasonality::Bool, seasonal_period::Union{Missing, Int64}, stochastic::Bool, order::Vector{Int64})
+function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missing}, has_level::Bool, has_slope::Bool, has_seasonality::Bool, 
+                            seasonal_period::Union{Missing, Int64}, stochastic::Bool, order::Vector{Int64}, combination::String="additive")
 
     #T = length(y)
     has_explanatories = !ismissing(X) ? true : false
+    combination == "additive" ? initial_vector  = zeros(length(y)) : initial_vector  = ones(length(y))
 
     if has_level || has_slope || has_seasonality
         if has_explanatories
@@ -20,7 +22,7 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
                 initial_ϕ[order[i]] = ar_coefs[order[i]]
             end
         else
-            initial_ar = zeros(length(y))
+            initial_ar = initial_vector#zeros(length(y))
             initial_ϕ  = 0.0
         end
 
@@ -40,22 +42,22 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
     if has_slope && has_level
         initial_rws   = output.components["level"]["values"]
         initial_slope = output.components["slope"]["values"]
-        initial_rw    = zeros(length(y))
+        initial_rw    = initial_vector#zeros(length(y))
     elseif !has_slope && has_level
         initial_rw = output.components["level"]["values"]
-        initial_rws  = zeros(length(y))
-        initial_slope = zeros(length(y))
+        initial_rws  = initial_vector#zeros(length(y))
+        initial_slope = initial_vector#zeros(length(y))
     elseif !has_slope && !has_level
-        initial_rws  = zeros(length(y))
-        initial_slope = zeros(length(y))
-        initial_rw    = zeros(length(y))
+        initial_rws  = initial_vector#zeros(length(y))
+        initial_slope = initial_vector#zeros(length(y))
+        initial_rw    = initial_vector#zeros(length(y))
     end
 
     if has_seasonality
         initial_seasonality = output.components["seasonality"]["values"]
         initial_γ, initial_γ_star = fit_harmonics(initial_seasonality, seasonal_period, stochastic)
     else
-        initial_seasonality = zeros(length(y))
+        initial_seasonality = initial_vector#zeros(length(y))
         initial_γ = zeros(1)
         initial_γ_star = zeros(1)
     end
@@ -133,7 +135,7 @@ end
   
 function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missing} , gas_model::GASModel) where Fl
 
-    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
+    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic, combination = gas_model
 
     dist_code               = get_dist_code(dist)
     num_params              = get_num_params(dist)
@@ -179,10 +181,10 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
         
         X_aux =  i == 1 && !ismissing(X) ? X : missing
         
-        initial_values[i] = get_initial_values(initial_params[i], X_aux, has_level[i], has_slope[i], has_seasonal[i], seasonal_period[i], stochastic, order[i])
+        initial_values[i] = get_initial_values(initial_params[i], X_aux, has_level[i], has_slope[i], has_seasonal[i], seasonal_period[i], stochastic, order[i], combination)
          
         # initialize the mean parameter as the sum of the initial values of the components
-        combination = "multiplicative"
+        
         if combination == "additive"
             println("Combination $combination")
             initial_params[i] = zeros(T)
@@ -201,7 +203,7 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
             for k in ["rw", "rws", "slope", "seasonality", "explanatories", "ar"]
                 if haskey(initial_values[i], k)
                     println(k)
-                    println(initial_values[i][k]["values"])
+                    println("Initial values = ",initial_values[i][k]["values"])
                     if k != "explanatories"
                         initial_params[i] .*= initial_values[i][k]["values"]
                     else

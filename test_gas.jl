@@ -158,7 +158,7 @@ function plot_forecast(fitted_model, forecast, y_test, forecast_dates, model, re
     display(p)
 end
 
-function plot_fit_forecast(fitted_model, forecast,fit_dates, y_train, y_test, forecast_dates, model, residuals, recover_scale, serie)
+function (fitted_model, forecast,fit_dates, y_train, y_test, forecast_dates, model, residuals, recover_scale, serie)
     fit_in_sample = fitted_model.fit_in_sample[2:end]
     dates = vcat(fit_dates, forecast_dates)
     if recover_scale
@@ -276,11 +276,13 @@ DICT_MODELS = Dict()
 ena = CSV.read(path_series*"ena_limpo.csv",DataFrame)
 vazao = CSV.read(path_series*"vazao_limpo.csv", DataFrame)
 carga = CSV.read(path_series*"carga_limpo.csv", DataFrame)
+carga_marina = CSV.read(path_series*"dados_cris.csv EMT_rural_cativo.csv", DataFrame)
 
 dict_series = Dict()
 dict_series["ena"] = Dict()
 dict_series["vazao"] = Dict()
 dict_series["carga"] = Dict()
+dict_series["carga_marina"] = Dict()
 
 dict_series["ena"]["values"] = ena[:,:ENA]
 dict_series["ena"]["dates"] = ena[:,:Data]
@@ -289,6 +291,10 @@ dict_series["carga"]["dates"] = carga[:,:Data]
 dict_series["vazao"]["values"] = round.(vazao[:,:Vazao],digits=2)
 dict_series["vazao"]["dates"] = vazao[:,:Data]
 
+valores = parse.(Float64, replace.(carga_marina[:,:value], ","=>"."))
+
+dict_series["carga_marina"]["values"] = valores
+dict_series["carga_marina"]["dates"] = carga_marina[:, :timestamp]
 
 p1 = plot(dict_series["vazao"]["dates"],dict_series["vazao"]["values"],label="")
 p2 = histogram(dict_series["vazao"]["values"], bins=25,label="")
@@ -299,7 +305,7 @@ savefig(current_path*"\\Saidas\\Relatorio\\SeriesTestes\\vazao.png")
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "carga"
+serie = "carga_marina"
 y = log.(dict_series[serie]["values"])
 dates = dict_series[serie]["dates"]
 
@@ -320,26 +326,26 @@ dist = UnobservedComponentsGAS.NormalDistribution(missing, missing)
 
 DICT_MODELS["LogNormal"] = Dict() 
 
-DICT_MODELS["LogNormal"]["carga"]=UnobservedComponentsGAS.GASModel(dist, [true, false], 0.0, Dict(1=>false),  
+DICT_MODELS["LogNormal"]["carga_marina"]=UnobservedComponentsGAS.GASModel(dist, [true, false], 1.0, Dict(1=>false),  
                                                         Dict(1 => true),  Dict(1 => false), 
-                                                        Dict(1 => 12), false, false)
+                                                        Dict(1 => 12), false, false, "multiplicative")
 
 DICT_MODELS["LogNormal"]["vazao"]=UnobservedComponentsGAS.GASModel(dist, [true, false], 1.0, Dict(2 => false, 1=>false),  
                                                             Dict(1 => true, 2=>false),  Dict(1 => false, 2 => false), 
-                                                            Dict(1 => 12), false, false)
+                                                            Dict(1 => 12), false, false, "multiplicative")
 
 DICT_MODELS["LogNormal"]["ena"]=UnobservedComponentsGAS.GASModel(dist, [true, false], 1.0, Dict(1=>false), 
-                                                            Dict(1=>false), Dict(1 => 3), 
-                                                            Dict(1 => 12), false, false)
+                                                            Dict(1=>false), Dict(1 => 2), 
+                                                            Dict(1 => 12), false, false, "multiplicative")
 
 num_scenarious = 500
 
 gas_model = DICT_MODELS[distribution][serie]
 fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train)
 
-gas_model = DICT_MODELS[distribution][serie]
-auto_gas_output = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
-fitted_model = auto_gas_output[1]
+# gas_model = DICT_MODELS[distribution][serie]
+# auto_gas_output = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
+# fitted_model = auto_gas_output[1]
 
 std_residuals = get_residuals(fitted_model, distribution, y_train, true)
 residuals = get_residuals(fitted_model, distribution, y_train, false)
@@ -367,7 +373,7 @@ savefig(path_saida*"$(serie)_fit_in_sample_$(distribution).png")
 plot_forecast(fitted_model, forecast, y_test, dates_test, distribution, residuals, recover_scale, serie)
 savefig(path_saida*"$(serie)_forecast_$(distribution).png")
 
-plot_fit_forecast(fitted_model, forecast, dates_train, y_train, y_test, dates_test, distribution, residuals, recover_scale, serie)
+(fitted_model, forecast, dates_train, y_train, y_test, dates_test, distribution, residuals, recover_scale, serie)
 savefig(path_saida*"$(serie)_fit_forecast_$(distribution).png")
 
 plot_residuals(std_residuals, dates_train, distribution, true, serie)
@@ -396,6 +402,10 @@ savefig(path_saida*"$(serie)_diagnosticos_$(distribution).png")
 
 mapes = get_mapes(y_train, y_test, fitted_model, forecast, residuals ,recover_scale)
 CSV.write(path_saida*"$(serie)_mapes.csv",mapes)
+
+
+plot((components["level"].+components["slope"]).*components["seasonality"])
+
 
 " -------------------- GAS-CNO Gamma -------------------- "
 
@@ -466,7 +476,7 @@ savefig(path_saida*"$(serie)_fit_in_sample_$(distribution).png")
 plot_forecast(fitted_model, forecast, y_test, dates_test, distribution, residuals, recover_scale, serie)
 savefig(path_saida*"$(serie)_forecast_$(distribution).png")
 
-plot_fit_forecast(fitted_model, forecast, dates_train, y_train, y_test, dates_test, distribution, residuals, recover_scale, serie)
+(fitted_model, forecast, dates_train, y_train, y_test, dates_test, distribution, residuals, recover_scale, serie)
 savefig(path_saida*"$(serie)_fit_forecast_$(distribution).png")
 
 plot_residuals(std_residuals, dates_train, distribution, true, serie)
@@ -518,7 +528,7 @@ dict_benchmarks["vazao"]["forecast"] = CSV.read(path_series*"vazao_forecast_auto
 
 
 for serie in ["carga", "ena", "vazao"]
-
+    
     y = dict_series[serie]["values"]
     dates = dict_series[serie]["dates"]
     fit = dict_benchmarks[serie]["fit"].Values

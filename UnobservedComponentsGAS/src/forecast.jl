@@ -197,13 +197,25 @@ end
 "
 Updates the dict_hyperparams_and_fitted_components with the distribution parameters scenarios, for a specific time t.
 "
-function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any}, param::Int64, t::Int64, s::Int64)
+function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any}, param::Int64, t::Int64, s::Int64; combination::String="additive")
 
-    dict_hyperparams_and_fitted_components["params"][param, t, s] = dict_hyperparams_and_fitted_components["intercept"][param] + 
-                                                                    dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] + 
-                                                                    dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] +
-                                                                    dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s] +
-                                                                    dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s] 
+    if combination == "additive"
+        # println("Combination $combination")
+        dict_hyperparams_and_fitted_components["params"][param, t, s] = dict_hyperparams_and_fitted_components["intercept"][param] + 
+                                                                        dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] + 
+                                                                        dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] +
+                                                                        dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s] +
+                                                                        dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s] 
+    else
+        # t<=286 ? println("Combination $combination") : nothing
+        # t<=286 ? println(dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s]) : nothing
+        dict_hyperparams_and_fitted_components["params"][param, t, s] = dict_hyperparams_and_fitted_components["intercept"][param] + 
+                                                                    dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] * 
+                                                                    dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] *
+                                                                    dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s] * 
+                                                                    dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s]
+                                                                    
+    end
                                                                                 
 end
 
@@ -227,7 +239,7 @@ Simulates scenarios considering the uncertaintity in the dynamics.
 "
 function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitted_components::Dict{String, Any}, y::Vector{Float64}, steps_ahead::Int64, num_scenarios::Int64)
     
-    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
+    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic, combination = gas_model
 
     idx_params      = get_idxs_time_varying_params(time_varying_params) 
     order           = get_AR_order(ar)
@@ -266,7 +278,7 @@ function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitt
                 if ar[i] != false
                     update_AR!(dict_hyperparams_and_fitted_components, order, i, T_fitted + t, s)
                 end
-                update_params!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s)
+                update_params!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s; combination=combination)
             end
             pred_y[T_fitted + t, s] = sample_dist(dict_hyperparams_and_fitted_components["params"][:, T_fitted + t, s], dist)
         end
