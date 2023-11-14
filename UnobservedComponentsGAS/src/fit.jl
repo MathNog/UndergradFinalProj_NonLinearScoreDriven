@@ -116,7 +116,7 @@ function fit(gas_model::GASModel, y::Vector{Fl};
         fitted_model = fit(gas_model, y, model, parameters, initial_values; α = α, robust_prop = robust_prop)
     end
 
-    return fitted_model
+    return fitted_model, initial_values
 end
 
 "

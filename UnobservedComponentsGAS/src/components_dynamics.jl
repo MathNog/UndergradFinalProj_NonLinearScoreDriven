@@ -74,7 +74,7 @@ function add_random_walk_slope!(model::Ml, s::Vector{Fl}, T::Int64, random_walk_
     @NLconstraint(model, [t = 2:T, j in idx_params], RWS[t, j] == RWS[t - 1, j] + b[t - 1, j] + κ_RWS[j] * s[j][t])
     @constraint(model, [j in idx_params], 1e-1 ≤ κ_RWS[j] ≤ 10.)
     @constraint(model, [j in idx_params], 1e-1 ≤ κ_b[j] ≤ 10.)
-    @constraint(model, 1e-4 ≤ ϕ ≤ 1.)
+    @constraint(model, 0.7 ≤ ϕ ≤ 1.)
 end
 
 "

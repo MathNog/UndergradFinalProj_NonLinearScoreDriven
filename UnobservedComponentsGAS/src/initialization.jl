@@ -4,6 +4,7 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
     #T = length(y)
     has_explanatories = !ismissing(X) ? true : false
     combination == "additive" ? initial_vector  = zeros(length(y)) : initial_vector  = ones(length(y))
+    combination == "additive" ? initial_γ_value = zeros(1) : initial_γ_value = ones(1)
 
     if has_level || has_slope || has_seasonality
         if has_explanatories
@@ -58,8 +59,8 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
         initial_γ, initial_γ_star = fit_harmonics(initial_seasonality, seasonal_period, stochastic)
     else
         initial_seasonality = initial_vector#zeros(length(y))
-        initial_γ = zeros(1)
-        initial_γ_star = zeros(1)
+        initial_γ = initial_γ_value#zeros(1)
+        initial_γ_star = initial_γ_value#zeros(1)
     end
 
     # initial_values = Dict{String}{Any}()
@@ -202,8 +203,8 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
             initial_params[i] = ones(T)
             for k in ["rw", "rws", "slope", "seasonality", "explanatories", "ar"]
                 if haskey(initial_values[i], k)
-                    println(k)
-                    println("Initial values = ",initial_values[i][k]["values"])
+                    # println(k)
+                    # println("Initial values = ",initial_values[i][k]["values"])
                     if k != "explanatories"
                         initial_params[i] .*= initial_values[i][k]["values"]
                     else
