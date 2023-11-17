@@ -38,6 +38,7 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
         end
 
         if has_random_walk_slope(random_walk_slope, i)
+            
             components["param_$i"]["level"]                    = Dict{String, Any}()
             components["param_$i"]["level"]["hyperparameters"] = Dict{String, Any}()
             components["param_$i"]["slope"]                    = Dict{String, Any}()
@@ -47,6 +48,7 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
             components["param_$i"]["level"]["hyperparameters"]["κ"] = value(model[:κ_RWS][i])
             components["param_$i"]["slope"]["value"]                = Vector(value.(model[:b][:, i]))
             components["param_$i"]["slope"]["hyperparameters"]["κ"] = value(model[:κ_b][i])
+            components["param_$i"]["slope"]["hyperparameters"]["ϕ"] = value(model[:ϕ])
         end
 
         if has_seasonality(seasonality, i)

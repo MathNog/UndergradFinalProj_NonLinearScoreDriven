@@ -43,7 +43,7 @@ function add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Dict{Int64, Int64
     @variable(model, ϕ[1:max_order, idx_params])
     @variable(model, κ_AR[idx_params])
 
-    @constraint(model, [i in idx_params], 1e-4 ≤ κ_AR[i] ≤ 1.)
+    @constraint(model, [i in idx_params], 1e-4 ≤ κ_AR[i] ≤ 10.)
 
     for i in unique_orders
         for j in eachindex(idx_params)
@@ -68,11 +68,13 @@ function add_random_walk_slope!(model::Ml, s::Vector{Fl}, T::Int64, random_walk_
     @variable(model, b[1:T, idx_params])
     @variable(model, κ_RWS[idx_params])
     @variable(model, κ_b[idx_params])
+    @variable(model, ϕ)
 
-    @NLconstraint(model, [t = 2:T, j in idx_params], b[t, j] == b[t - 1, j] + κ_b[j] * s[j][t])
+    @NLconstraint(model, [t = 2:T, j in idx_params], b[t, j] == 1*b[t - 1, j] + κ_b[j] * s[j][t])
     @NLconstraint(model, [t = 2:T, j in idx_params], RWS[t, j] == RWS[t - 1, j] + b[t - 1, j] + κ_RWS[j] * s[j][t])
-    @constraint(model, [j in idx_params], 1e-4 ≤ κ_RWS[j] ≤ 1.)
-    @constraint(model, [j in idx_params], 1e-4 ≤ κ_b[j] ≤ 1.)
+    @constraint(model, [j in idx_params], 1e-1 ≤ κ_RWS[j] ≤ 10.)
+    @constraint(model, [j in idx_params], 1e-1 ≤ κ_b[j] ≤ 10.)
+    @constraint(model, 0.7 ≤ ϕ ≤ 1.)
 end
 
 "
@@ -86,7 +88,7 @@ function add_random_walk!(model::Ml, s::Vector{Fl}, T::Int64, random_walk::Dict{
     @variable(model, κ_RW[idx_params])
 
     @NLconstraint(model, [t = 2:T, j in idx_params], RW[t, j] == RW[t-1, j] + κ_RW[j] * s[j][t])
-    @constraint(model, [j in idx_params], 1e-4 ≤ κ_RW[j] ≤ 1.)
+    @constraint(model, [j in idx_params], 1e-4 ≤ κ_RW[j] ≤ 10.)
 end
 
 "
@@ -121,7 +123,7 @@ function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seas
     unique_num_harmonic = unique(num_harmonic)[1]
     @variable(model, S[1:T, idx_params])
     @variable(model, κ_S[idx_params])
-    @constraint(model, [i in idx_params], 1e-4 ≤ κ_S[i] ≤ 1.)
+    @constraint(model, [i in idx_params], 1e-4 ≤ κ_S[i] ≤ 10.)
 
     if stochastic
         @variable(model, γ[1:unique_num_harmonic, 1:T, idx_params])
@@ -172,21 +174,24 @@ end
 "Include a given component to the parameters dynamic if its necessary, otherwise, return 0.
 Used in the construction of the JuMP model.
 "
-function include_component_in_dynamic(model::Ml, component::Symbol, has_component::Bool, t::Int64, idx_param::Int64) where Ml
+function include_component_in_dynamic(model::Ml, component::Symbol, has_component::Bool, t::Int64, idx_param::Int64; combination::String="additive") where Ml
 
+    # println("Combination = $combination")
     if has_component
         return model[component][t, idx_param]
     else
-        return 0
+        combination == "additive" ? r = 0 : r = 1
+        return r
     end
 end
 
 "Include explanatories to the parameters dynamic if its necessary, otherwise, return 0"
-function include_explanatories_in_dynamic(model::Ml, X::Union{Missing, Matrix{Float64}}, has_explanatories::Bool, t::Int64, idx_param::Int64) where Ml
+function include_explanatories_in_dynamic(model::Ml, X::Union{Missing, Matrix{Float64}}, has_explanatories::Bool, t::Int64, idx_param::Int64; combination::String="additive") where Ml
 
     if has_explanatories
         return X[t, :]' * model[:β][:, idx_param]
     else
-        return 0
+        combination == "additive" ? r = 0 : r = 1
+        return r
     end
 end
