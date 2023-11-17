@@ -305,7 +305,7 @@ savefig(current_path*"\\Saidas\\Relatorio\\SeriesTestes\\vazao.png")
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "carga"
+serie = "ena"
 y = log.(dict_series[serie]["values"])
 # y = log.(collect(1:141) .+ rand(Normal(0,10),141))
 dates = dict_series[serie]["dates"]
@@ -325,9 +325,9 @@ distribution = "LogNormal"
 dist = UnobservedComponentsGAS.NormalDistribution(missing, missing)
 combination = "multiplicative"
 
-d   = 0.0
+d   = 1.0
 α   = 0.2
-tol = 0.5
+tol = 0.005
 
 
 DICT_MODELS["LogNormal"] = Dict() 
@@ -395,6 +395,8 @@ recover_scale ? scale="Original" : scale="Log"
 
 path_saida = current_path*"\\Saidas\\CombNaoLinear\\$distribution\\$scale\\"
 
+CSV.write(path_saida*"$(serie)_hyperparams.csv",DataFrame("d"=>d, "tol"=>tol, "α"=>α))
+
 dict_params = DataFrame(get_parameters(fitted_model))
 CSV.write(path_saida*"$(serie)_params.csv",dict_params)
 
@@ -442,7 +444,7 @@ plot((components["level"].+components["slope"]).*components["seasonality"])
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "ena"
+serie = "carga"
 y = dict_series[serie]["values"]
 dates = dict_series[serie]["dates"]
 
@@ -459,35 +461,35 @@ dates_test = dates[len_train+1:end]
 
 distribution = "Gamma"
 dist = UnobservedComponentsGAS.GammaDistribution(missing, missing)
+combination = "multiplicative"
 
-DICT_MODELS[distribution] = Dict() 
+d   = 1.0
+α   = 0.5
+tol = 0.005
 
-DICT_MODELS[distribution]["carga"]=UnobservedComponentsGAS.GASModel(dist, [true, false], 0.0, Dict(1=>false),  
+DICT_MODELS["Gamma"] = Dict() 
+
+DICT_MODELS["Gamma"]["carga"]=UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false),  
                                                         Dict(1 => true),  Dict(1 => false), 
-                                                        Dict(1 => 12), false, true)
+                                                        Dict(1 => 12), false, false, combination)
 
-DICT_MODELS[distribution]["vazao"]=UnobservedComponentsGAS.GASModel(dist, [true, false], 1.0, Dict(2 => false, 1=>false),  
-                                                            Dict(1 => true, 2=>false),  Dict(1 => false, 2 => false), 
-                                                            Dict(1 => 12), false, false)
+DICT_MODELS["Gamma"]["ena"]=UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false), 
+                                                            Dict(1=>false), Dict(1 => 2), 
+                                                            Dict(1 => 12), false, false, combination)
 
-DICT_MODELS[distribution]["ena"]=UnobservedComponentsGAS.GASModel(dist, [true, false], 0.5, Dict(1=>false), 
-                                                            Dict(1=>false), Dict(1 => 1), 
-                                                            Dict(1 => 12), false, false)
-
+DICT_MODELS["Gamma"]["carga_marina"]=UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false),  
+                                                        Dict(1 => true),  Dict(1 => false), 
+                                                        Dict(1 => 12), false, false, combination)
 
 num_scenarious = 500
 
 gas_model = DICT_MODELS[distribution][serie]
-fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train)
+fitted_model, initial_values_dict = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol);
 
-# gas_model = UnobservedComponentsGAS.GASModel(dist, time_varying_params, missing, random_walk, random_walk_slope, ar, seasonality, robust, stochastic)
-# auto_gas_output = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
-# auto_gas_output
-# fitted_model = auto_gas_output[1]
 
-residuals = get_residuals(fitted_model, distribution, y_train, false)
 std_residuals = get_residuals(fitted_model, distribution, y_train, true)
-forecast = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious)
+residuals = get_residuals(fitted_model, distribution, y_train, false)
+forecast = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious; combination=combination)
 
 fitted_model.fit_in_sample = denormalize_data(fitted_model.fit_in_sample, y)
 y_train = denormalize_data(y_train, y)
@@ -495,8 +497,11 @@ y_test = denormalize_data(y_test, y)
 forecast["mean"] = denormalize_data(forecast["mean"], y)
 
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
+
 path_saida = current_path*"\\Saidas\\CombNaoLinear\\$distribution\\"
 recover_scale = false
+
+CSV.write(path_saida*"$(serie)_hyperparams.csv",DataFrame("d"=>d, "tol"=>tol, "α"=>α))
 
 dict_params = DataFrame(get_parameters(fitted_model))
 CSV.write(path_saida*"$(serie)_params.csv",dict_params)
@@ -507,7 +512,7 @@ savefig(path_saida*"$(serie)_fit_in_sample_$(distribution).png")
 plot_forecast(fitted_model, forecast, y_test, dates_test, distribution, residuals, recover_scale, serie)
 savefig(path_saida*"$(serie)_forecast_$(distribution).png")
 
-(fitted_model, forecast, dates_train, y_train, y_test, dates_test, distribution, residuals, recover_scale, serie)
+plot_fit_forecast(fitted_model, forecast, dates_train, y_train, y_test, dates_test, distribution, residuals, recover_scale, serie)
 savefig(path_saida*"$(serie)_fit_forecast_$(distribution).png")
 
 plot_residuals(std_residuals, dates_train, distribution, true, serie)
