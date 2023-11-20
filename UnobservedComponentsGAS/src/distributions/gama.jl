@@ -188,17 +188,19 @@ function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, di
 end
  
  
-function get_seasonal_var(y::Vector{Fl}, seasonal_period::Int64, dist::NormalDistribution) where Fl
+function get_seasonal_var(y::Vector{Fl}, seasonal_period::Int64, dist::GammaDistribution) where Fl
 
     num_periods = ceil(Int, length(y) / seasonal_period)
     seasonal_variances = zeros(Fl, length(y))
-
+    
     for i in 1:seasonal_period
         month_data = y[i:seasonal_period:end]
         num_observations = length(month_data)
         if num_observations > 0
-            variance = Distributions.fit(Normal, month_data).σ^2
-            
+            α, θ = Distributions.fit(Gamma, month_data)
+            println(α, θ)
+            println(Distributions.fit(Gamma, month_data))
+            variance = α*(θ^2) 
             for j in 1:num_observations
                 seasonal_variances[i + (j - 1) * seasonal_period] = variance
             end
