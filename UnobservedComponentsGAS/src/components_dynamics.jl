@@ -37,7 +37,7 @@ function add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Dict{Int64, Int64
     order      = get_AR_order(ar)
 
     max_order     = maximum(vcat(order...)) # Maximum lag in the model
-    unique_orders = unique(vcat(order...))[findall(i -> i != 0.0, vcat(order...))]
+    unique_orders = filter(x -> x != 0.0, unique(vcat(order...)))#[findall(i -> i != 0.0, vcat(order...))]
     
     @variable(model, AR[1:T, idx_params])
     @variable(model, ϕ[1:max_order, idx_params])
@@ -46,10 +46,10 @@ function add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Dict{Int64, Int64
     @constraint(model, [i in idx_params], 1e-4 ≤ κ_AR[i] ≤ 10.)
 
     for i in unique_orders
-        for j in eachindex(idx_params)
+        for j in idx_params
             if i ∉ order[j]
                 #@constraint(model, ϕ[i, idx_params[j]] == 0)
-                JuMP.fix(model[:ϕ][i, idx_params], 0.0)
+                JuMP.fix(model[:ϕ][i, j], 0.0)
             end
         end
     end
@@ -72,8 +72,8 @@ function add_random_walk_slope!(model::Ml, s::Vector{Fl}, T::Int64, random_walk_
 
     @NLconstraint(model, [t = 2:T, j in idx_params], b[t, j] == ϕ*b[t - 1, j] + κ_b[j] * s[j][t])
     @NLconstraint(model, [t = 2:T, j in idx_params], RWS[t, j] == RWS[t - 1, j] + b[t - 1, j] + κ_RWS[j] * s[j][t])
-    @constraint(model, [j in idx_params], 1e-1 ≤ κ_RWS[j] ≤ 10.)
-    @constraint(model, [j in idx_params], 1e-1 ≤ κ_b[j] ≤ 10.)
+    @constraint(model, [j in idx_params], 1e-4 ≤ κ_RWS[j] ≤ 10.)
+    @constraint(model, [j in idx_params], 1e-4 ≤ κ_b[j] ≤ 10.)
     @constraint(model, 0.7 ≤ ϕ ≤ 1.)
 end
 
@@ -116,16 +116,19 @@ Add the variables and constraints of the trigonometric seasonality dynamic to a 
 "
 function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}, stochastic::Bool=true) where {Ml, Fl}
     
-    num_harmonic, seasonal_period = get_num_harmonic_and_seasonal_period(seasonality)
+    num_harmonic, seasonal_period = UnobservedComponentsGAS.get_num_harmonic_and_seasonal_period(seasonality)
 
     idx_params = findall(i -> i != false, seasonality) # Time-varying parameters with the seasonality dynamic
 
-    unique_num_harmonic = unique(num_harmonic)[1]
-    @variable(model, S[1:T, idx_params])
-    @variable(model, κ_S[idx_params])
-    @constraint(model, [i in idx_params], 1e-4 ≤ κ_S[i] ≤ 10.)
+    unique_num_harmonic = unique(num_harmonic)[minimum(idx_params)]
+    #@variable(model, S[1:T, idx_params])
+    # @variable(model, κ_S[idx_params])
+    # @constraint(model, [i in idx_params], 1e-4 ≤ κ_S[i])
 
     if stochastic
+        @variable(model, κ_S[idx_params])
+        @constraint(model, [i in idx_params], 1e-4 ≤ κ_S[i] ≤ 10.)
+
         @variable(model, γ[1:unique_num_harmonic, 1:T, idx_params])
         @variable(model, γ_star[1:unique_num_harmonic, 1:T, idx_params])
 
@@ -134,14 +137,18 @@ function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seas
         @NLconstraint(model, [i = 1:unique_num_harmonic, t = 2:T, j in idx_params], γ_star[i, t, j] == -γ[i, t-1, j] * sin(2*π*i / seasonal_period[j]) + 
                                                                                     γ_star[i,t-1, j]*cos(2*π*i / seasonal_period[j]) + κ_S[j] * s[j][t])
 
-        @NLconstraint(model, [t = 2:T, j in idx_params], S[t, j] == sum(γ[i, t, j]  for i in 1:unique_num_harmonic))
+        #@NLconstraint(model, [t = 2:T, j in idx_params], S[t, j] == sum(γ[i, t, j]  for i in 1:unique_num_harmonic))
+        @expression(model, S[t = 1:T, j in idx_params], sum(γ[i, t, j]  for i in 1:unique_num_harmonic))
     else
 
         @variable(model, γ[1:unique_num_harmonic, idx_params])
         @variable(model, γ_star[1:unique_num_harmonic, idx_params])
 
-        @NLconstraint(model, [t = 2:T, j in idx_params], S[t, j] == sum(γ[i, j]*cos(2 * π * i * t/seasonal_period[j]) + 
-                                            γ_star[i, j] * sin(2 * π * i* t/seasonal_period[j])  for i in 1:unique_num_harmonic))
+        # @NLconstraint(model, [t = 2:T, j in idx_params], S[t, j] == sum(γ[i, j]*cos(2 * π * i * t/seasonal_period[j]) + 
+        #                                     γ_star[i, j] * sin(2 * π * i* t/seasonal_period[j])  for i in 1:unique_num_harmonic))
+
+        @expression(model, S[t = 1:T, j in idx_params], sum(γ[i, j]*cos(2 * π * i * t/seasonal_period[j]) + 
+                                            γ_star[i, j] * sin(2 * π * i* t/seasonal_period[j]) for i in 1:unique_num_harmonic))
 
     end
 
@@ -176,7 +183,6 @@ Used in the construction of the JuMP model.
 "
 function include_component_in_dynamic(model::Ml, component::Symbol, has_component::Bool, t::Int64, idx_param::Int64; combination::String="additive") where Ml
 
-    # println("Combination = $combination")
     if has_component
         return model[component][t, idx_param]
     else

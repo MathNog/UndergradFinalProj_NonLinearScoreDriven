@@ -48,7 +48,7 @@ function logpdf_normal(param, y)
         param[2] = 1e-4
     end
 
-    return -0.5 * log(2 * π * param[2]) - ((y - param[1])^2)/(2 * (param[2]))
+    return -0.5 * log(2 * π * param[2]) - ((y - param[1])^2)/(2 * param[2])
 end
 
 "
@@ -79,6 +79,10 @@ Simulates a value from a given Normal distribution.
     param[2] = σ² 
 "
 function sample_dist(param::Vector{Float64}, dist::NormalDistribution)
+
+    if param[2] < 0.0
+        param[2] = 1e-4
+    end
     
     return rand(Normal(param[1], sqrt(param[2])))
 end
@@ -94,10 +98,11 @@ end
 "
 Returns a dictionary with the initial values of the parameters of Normal distribution that will be used in the model initialization.
 "
-function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, dist::NormalDistribution) where Fl
+function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, dist::NormalDistribution, seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}) where Fl
 
     T         = length(y)
     dist_code = get_dist_code(dist)
+    seasonal_period = get_num_harmonic_and_seasonal_period(seasonality)[2]
 
     initial_params = Dict()
 
@@ -108,12 +113,31 @@ function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, di
     end
 
     if time_varying_params[2]
-        initial_params[2] = (scaled_score.(y, ones(T) * var(diff(y)) , y, 0.5, dist_code, 2)).^2
+        initial_params[2] = get_seasonal_var(y, maximum(seasonal_period), dist) #(scaled_score.(y, ones(T) * var(diff(y)) , y, 0.5, dist_code, 2)).^2
     else
         initial_params[2] = var(diff(y))
     end
 
     return initial_params
 end
- 
+
+
+function get_seasonal_var(y::Vector{Fl}, seasonal_period::Int64, dist::NormalDistribution) where Fl
+
+    num_periods = ceil(Int, length(y) / seasonal_period)
+    seasonal_variances = zeros(Fl, length(y))
+
+    for i in 1:seasonal_period
+        month_data = y[i:seasonal_period:end]
+        num_observations = length(month_data)
+        if num_observations > 0
+            variance = Distributions.fit(Normal, month_data).σ^2
+            
+            for j in 1:num_observations
+                seasonal_variances[i + (j - 1) * seasonal_period] = variance
+            end
+        end
+    end
+    return seasonal_variances
+end
  

@@ -56,7 +56,7 @@ function compute_score(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, d::Floa
     num_param = get_num_params(dist)
     dist_code = get_dist_code(dist)
 
-    s = Vector(undef, num_time_varying_params)
+    s = Vector(undef, num_param)
 
     if num_param == 2
         register(model, :scaled_score, 6, scaled_score; autodiff = true)
@@ -94,16 +94,15 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
     idx_time_varying_params = get_idxs_time_varying_params(time_varying_params) 
 
     @variable(model, c[idx_time_varying_params])
-    # @constraint(model, c .== 0)
 
     has_explanatory = !ismissing(X) ? true : false
-    
+
     for i in idx_time_varying_params
 
         dynamic_aux = Vector(undef, T)
 
         has_explanatory_param = has_explanatory && i == 1
-        
+
         if combination == "additive"
             println("Combination = $combination")
             for t in 2:T

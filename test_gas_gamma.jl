@@ -320,9 +320,9 @@ dist = UnobservedComponentsGAS.GammaDistribution(missing, missing)
 combination = "additive"
 
 d   = 0.0
-α   = 0.5
-tol = 0.005
-stochastic = false
+α   = 0.1
+tol = 0.0005
+stochastic = true
 
 DICT_MODELS["Gamma"] = Dict() 
 
@@ -340,8 +340,12 @@ DICT_MODELS["Gamma"]["carga_marina"]=UnobservedComponentsGAS.GASModel(dist, [tru
 
 num_scenarious = 500
 
-gas_model = DICT_MODELS[distribution][serie]
-fitted_model, initial_values_dict = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol);
+# gas_model = DICT_MODELS[distribution][serie]
+# fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol);
+
+auto_model = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
+fitted_model = auto_model[1]
+gas_model = auto_model[2]
 
 std_residuals = get_residuals(fitted_model, distribution, y_train, true)
 residuals = get_residuals(fitted_model, distribution, y_train, false)
