@@ -300,7 +300,7 @@ dict_series["carga_marina"]["dates"] = carga_marina[:, :timestamp]
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "carga"
+serie = "ena"
 y = dict_series[serie]["values"]
 dates = dict_series[serie]["dates"]
 
@@ -326,22 +326,22 @@ stochastic = false
 
 DICT_MODELS["Gamma"] = Dict() 
 
-DICT_MODELS["Gamma"]["carga"]=UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false),  
-                                                        Dict(1 => true),  Dict(1 => false), 
-                                                        Dict(1 => 12), false, stochastic, combination)
+DICT_MODELS["Gamma"]["carga"]=UnobservedComponentsGAS.GASModel(dist, [false, true], d, Dict(2=>false),  
+                                                        Dict(2 => true),  Dict(2 => false), 
+                                                        Dict(2 => 12), false, stochastic, combination)
 
-DICT_MODELS["Gamma"]["ena"]=UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false), 
-                                                            Dict(1=>false), Dict(1 => 2), 
-                                                            Dict(1 => 12), false, stochastic, combination)
+DICT_MODELS["Gamma"]["ena"]=UnobservedComponentsGAS.GASModel(dist, [false, true], d, Dict(2=>false), 
+                                                            Dict(2=>false), Dict(2=> 2), 
+                                                            Dict(2=> 12), false, stochastic, combination)
 
-DICT_MODELS["Gamma"]["carga_marina"]=UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false),  
-                                                        Dict(1 => true),  Dict(1 => false), 
-                                                        Dict(1 => 12), false, stochastic, combination)
+DICT_MODELS["Gamma"]["carga_marina"]=UnobservedComponentsGAS.GASModel(dist, [false, true], d, Dict(2=>false),  
+                                                        Dict(2=> true),  Dict(2=> false), 
+                                                        Dict(2=> 12), false, stochastic, combination)
 
 num_scenarious = 500
 
 gas_model = DICT_MODELS[distribution][serie]
-fitted_model, initial_values_dict = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol);
+fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol);
 
 std_residuals = get_residuals(fitted_model, distribution, y_train, true)
 residuals = get_residuals(fitted_model, distribution, y_train, false)

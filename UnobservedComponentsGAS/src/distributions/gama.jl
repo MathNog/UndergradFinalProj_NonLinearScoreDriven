@@ -3,8 +3,8 @@ Defines a Gamma distribution with parameters α λ.
 From a shape (α) and ratio (β) parametrization, we obtain our parametrization making λ = α/β
 "
 mutable struct GammaDistribution <: ScoreDrivenDistribution
-    λ::Union{Missing, Float64}
     α::Union{Missing, Float64}
+    λ::Union{Missing, Float64}
 end
 
 "
@@ -46,7 +46,7 @@ function score_gama(α, λ, y)
     ∇_λ = (α/λ)*(y/λ-1)
     # println("----------- Score Gamma -------------")
     # println(∇_α, ∇_λ)
-    return [∇_λ; ∇_α]
+    return [∇_α; ∇_λ]
 end
 
 "
@@ -62,28 +62,28 @@ function fisher_information_gama(α, λ)
 
     # println("--------------Fisher Gamma --------------")
     # println(I_α, I_λ)
-    return [I_λ 0; 0 I_α]
+    return [I_α 0; 0 I_λ]
 end
 
 "
 Evaluate the log pdf of a Normal distribution with mean μ and variance σ², in observation y.
 "
-function logpdf_gama(λ, α, y)
+function logpdf_gama(α, λ, y)
 
     # println("--------- LogPDF ---------------")
     # println(logpdf_gama([λ, α], y))
-    return logpdf_gama([λ, α], y)
+    return logpdf_gama([α, λ], y)
 end
 
 "
 Evaluate the log pdf of a Normal distribution with mean μ and variance σ², in observation y.
-    param[1] = λ
-    param[2] = α 
+    param[1] = α
+    param[2] = λ 
 "
 function logpdf_gama(param, y)
 
-    param[2]>=0 ? α = param[2] : α = 1e-4
-    param[1]>=0 ? λ = param[1] : λ = 1e-4
+    param[1]>=0 ? α = param[1] : α = 1e-4
+    param[2]>=0 ? λ = param[2] : λ = 1e-4
     
     return -log(Γ(α)) - α*log(1/α) - α*log(λ) +(α-1)*log(y) - (α/λ)*y
 end
@@ -93,8 +93,8 @@ Evaluate the cdf of a Gamma distribution with α,λ, in observation y.
 "
 function cdf_gama(param::Vector{Float64}, y::Fl) where Fl
 
-    param[2]>=0 ? α = param[2] : α = 1e-4
-    param[1]>=0 ? λ = param[1] : λ = 1e-4
+    param[1]>=0 ? α = param[1] : α = 1e-4
+    param[2]>=0 ? λ = param[2] : λ = 1e-4
 
     return Distributions.cdf(Distributions.Gamma(α, λ/α), y)
 end
@@ -115,15 +115,15 @@ end
 
 "
 Simulates a value from a given Normal distribution.
-    param[1] = λ
-    param[2] = α  
+    param[1] = α
+    param[2] = λ  
 "
 function sample_dist(param::Vector{Float64}, dist::GammaDistribution)
     
     "A Gamma do pacote Distributions é parametrizada com shape α e scale θ"
     "Como θ = 1/β e β = α/λ, segue-se que θ = λ/α"
-    param[2]>=0 ? α = param[2] : α = 1e-4
-    param[1]>=0 ? λ = param[1] : λ = 1e-4
+    param[1]>=0 ? α = param[1] : α = 1e-4
+    param[2]>=0 ? λ = param[2] : λ = 1e-4
     return rand(Distributions.Gamma(α, λ/α))
 end
 
@@ -166,39 +166,41 @@ function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, di
     fitted_distribution = fit_mle(Gamma, y)
     
     # param[2] = λ = média
-    if time_varying_params[1]
+    if time_varying_params[2]
         println("λ = y")
         # println(y)
-        initial_params[1] = y
+        initial_params[2] = y
     else
         println("λ = mean(y)")
-        initial_params[1] = fitted_distribution.α*fitted_distribution.θ
+        initial_params[2] = fitted_distribution.α*fitted_distribution.θ
     end
 
     # param[1] = α
-    if time_varying_params[2]
-        println("α = ??")
-        initial_params[2] = get_seasonal_var(y, maximum(seasonal_period), dist)#(scaled_score.(y, ones(T) * var(diff(y)) , y, 0.5, dist_code, 2)).^2
+    if time_varying_params[1]
+        println("α = seasonal var")
+        initial_params[1] = get_seasonal_var(y, maximum(seasonal_period), dist)#(scaled_score.(y, ones(T) * var(diff(y)) , y, 0.5, dist_code, 2)).^2
     else
         println("α = λ²/var(diff(y))")
-        initial_params[2] = get_initial_α(y)#mean(y)^2/var((y)) 
+        initial_params[1] = get_initial_α(y)#mean(y)^2/var((y)) 
     end
 
     return initial_params
 end
  
  
-function get_seasonal_var(y::Vector{Fl}, seasonal_period::Int64, dist::NormalDistribution) where Fl
+function get_seasonal_var(y::Vector{Fl}, seasonal_period::Int64, dist::GammaDistribution) where Fl
 
     num_periods = ceil(Int, length(y) / seasonal_period)
     seasonal_variances = zeros(Fl, length(y))
-
+    
     for i in 1:seasonal_period
         month_data = y[i:seasonal_period:end]
         num_observations = length(month_data)
         if num_observations > 0
-            variance = Distributions.fit(Normal, month_data).σ^2
-            
+            α, θ = Distributions.fit(Gamma, month_data)
+            println(α, θ)
+            println(Distributions.fit(Gamma, month_data))
+            variance = α*(θ^2) 
             for j in 1:num_observations
                 seasonal_variances[i + (j - 1) * seasonal_period] = variance
             end
