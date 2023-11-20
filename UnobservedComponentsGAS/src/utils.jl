@@ -10,7 +10,12 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
     idx_params = get_idxs_time_varying_params(time_varying_params)
 
     # Getting Fit in sample
-    fit_in_sample = Vector(value.(model[:params][:, 1]))
+    if 1 ∈ idx_params
+        fit_in_sample = Vector(value.(model[:params][:, 1]))
+    else
+        fit_in_sample = ones(size(model[:params], 1)) * value(model[:fixed_params][1])
+    end
+
 
     # Getting fitted parameters
     fitted_params = Dict{String, Vector{Float64}}()
@@ -38,7 +43,6 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
         end
 
         if has_random_walk_slope(random_walk_slope, i)
-            
             components["param_$i"]["level"]                    = Dict{String, Any}()
             components["param_$i"]["level"]["hyperparameters"] = Dict{String, Any}()
             components["param_$i"]["slope"]                    = Dict{String, Any}()
@@ -48,17 +52,22 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
             components["param_$i"]["level"]["hyperparameters"]["κ"] = value(model[:κ_RWS][i])
             components["param_$i"]["slope"]["value"]                = Vector(value.(model[:b][:, i]))
             components["param_$i"]["slope"]["hyperparameters"]["κ"] = value(model[:κ_b][i])
-            components["param_$i"]["slope"]["hyperparameters"]["ϕ"] = value(model[:ϕ])
         end
 
         if has_seasonality(seasonality, i)
             components["param_$i"]["seasonality"]                    = Dict{String, Any}()
             components["param_$i"]["seasonality"]["hyperparameters"] = Dict{String, Any}()
 
-            components["param_$i"]["seasonality"]["value"]                     = Vector(value.(model[:S][:, i]))
-            components["param_$i"]["seasonality"]["hyperparameters"]["κ"]      = value(model[:κ_S][i])
-            components["param_$i"]["seasonality"]["hyperparameters"]["γ"]      = Matrix(value.(model[:γ][:,:, i]))
-            components["param_$i"]["seasonality"]["hyperparameters"]["γ_star"] = Matrix(value.(model[:γ_star][:,:, i]))
+            components["param_$i"]["seasonality"]["value"]                     = Vector(value.(model[:S][:, i]).data)
+            if stochastic
+                components["param_$i"]["seasonality"]["hyperparameters"]["γ"]      = Matrix(value.(model[:γ][:,:, i]))
+                components["param_$i"]["seasonality"]["hyperparameters"]["γ_star"] = Matrix(value.(model[:γ_star][:,:, i]))
+                components["param_$i"]["seasonality"]["hyperparameters"]["κ"]      = value(model[:κ_S][i])
+            else
+                components["param_$i"]["seasonality"]["hyperparameters"]["γ"]      = Vector(value.(model[:γ][:, i]))
+                components["param_$i"]["seasonality"]["hyperparameters"]["γ_star"] = Vector(value.(model[:γ_star][:, i]))
+            end
+
         end
 
         if has_AR(ar, i)
@@ -70,7 +79,7 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
             components["param_$i"]["ar"]["hyperparameters"]["ϕ"] = Vector(value.(model[:ϕ][:, i]))
         end
 
-        if !ismissing(X)
+        if !ismissing(X) && i == 1
             components["param_$i"]["explanatories"] = Vector(value.(model[:β][:, i]))
         end
 
@@ -233,7 +242,7 @@ Check if a fitte model find a optimal or presented Invalid model or numeric erro
 "
 function is_valid_model(output::Output)
 
-    return output.model_status ∉ ["INVALID_MODEL", "NUMERIC_ERROR"]
+    return output.model_status ∉ ["INVALID_MODEL", "NUMERIC_ERROR", "TIME_LIMIT"]
 end
 
 function fit_AR_model(y::Vector{Fl}, order::Vector{Int64}) where Fl
@@ -242,6 +251,7 @@ function fit_AR_model(y::Vector{Fl}, order::Vector{Int64}) where Fl
     max_order = maximum(order) 
 
     model = JuMP.Model(Ipopt.Optimizer)
+    #set_silent(model)
     set_optimizer_attribute(model, "print_level", 0)
 
     @variable(model, c)
@@ -267,7 +277,9 @@ function fit_harmonics(y::Vector{Fl}, seasonal_period::Int64, stochastic::Bool) 
     end
 
     model = JuMP.Model(Ipopt.Optimizer)
+    #set_silent(model)
     set_optimizer_attribute(model, "print_level", 0)
+    #set_optimizer_attribute(model, "hessian_constant", "yes")
 
     @variable(model, y_hat[1:T])
 
@@ -275,9 +287,9 @@ function fit_harmonics(y::Vector{Fl}, seasonal_period::Int64, stochastic::Bool) 
         @variable(model, γ[1:num_harmonic, 1:T])
         @variable(model, γ_star[1:num_harmonic, 1:T])
 
-        @NLconstraint(model, [i = 1:num_harmonic, t = 2:T], γ[i, t] == γ[i, t-1] * cos(2*π*i / seasonal_period) + 
+        @constraint(model, [i = 1:num_harmonic, t = 2:T], γ[i, t] == γ[i, t-1] * cos(2*π*i / seasonal_period) + 
                                                                     γ_star[i,t-1]*sin(2*π*i / seasonal_period))
-        @NLconstraint(model, [i = 1:num_harmonic, t = 2:T], γ_star[i, t] == -γ[i, t-1] * sin(2*π*i / seasonal_period) + 
+        @constraint(model, [i = 1:num_harmonic, t = 2:T], γ_star[i, t] == -γ[i, t-1] * sin(2*π*i / seasonal_period) + 
                                                                                 γ_star[i,t-1]*cos(2*π*i / seasonal_period))
 
         @constraint(model, [t = 1:T], y_hat[t] == sum(γ[i, t] for i in 1:num_harmonic))

@@ -31,8 +31,7 @@ mutable struct GASModel
                         random_walk_slope::Dict{Int64, Bool}, 
                         ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}},
                         seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}},
-                        robust::Bool, stochastic::Bool,
-                        combination::String)
+                        robust::Bool, stochastic::Bool, combination::String)
 
         num_params = length(time_varying_params)
 

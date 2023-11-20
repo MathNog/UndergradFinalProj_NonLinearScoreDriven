@@ -11,7 +11,7 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
     num_params = get_num_params(dist)
     components = output.components
 
-    num_harmonic, seasonal_period = get_num_harmonic_and_seasonal_period(seasonality)
+    num_harmonic, seasonal_period = UnobservedComponentsGAS.get_num_harmonic_and_seasonal_period(seasonality)
 
     if isempty(num_harmonic) #caso não tenha sazonalidade, assume 1 harmonico para nao quebrar a função update_S!
         num_harmonic = Int64.(ones(get_num_params(dist)))
@@ -45,11 +45,11 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
     dict_hyperparams_and_fitted_components["seasonality"]["κ"]       = DICT_ZEROS_ONES[combination](num_params)
 
     if stochastic
-        dict_hyperparams_and_fitted_components["seasonality"]["γ"]       = DICT_ZEROS_ONES[combination](num_harmonic[1], T_fitted + steps_ahead, num_params, num_scenarios) 
-        dict_hyperparams_and_fitted_components["seasonality"]["γ_star"]  = DICT_ZEROS_ONES[combination](num_harmonic[1], T_fitted + steps_ahead, num_params, num_scenarios)
+        dict_hyperparams_and_fitted_components["seasonality"]["γ"]       = DICT_ZEROS_ONES[combination](num_harmonic[idx_params[1]], T_fitted + steps_ahead, num_params, num_scenarios) 
+        dict_hyperparams_and_fitted_components["seasonality"]["γ_star"]  = DICT_ZEROS_ONES[combination](num_harmonic[idx_params[1]], T_fitted + steps_ahead, num_params, num_scenarios)
     else
-        dict_hyperparams_and_fitted_components["seasonality"]["γ"]       = DICT_ZEROS_ONES[combination](num_harmonic[1], num_params) 
-        dict_hyperparams_and_fitted_components["seasonality"]["γ_star"]  = DICT_ZEROS_ONES[combination](num_harmonic[1], num_params)
+        dict_hyperparams_and_fitted_components["seasonality"]["γ"]       = DICT_ZEROS_ONES[combination](num_harmonic[idx_params[1]], num_params) 
+        dict_hyperparams_and_fitted_components["seasonality"]["γ_star"]  = DICT_ZEROS_ONES[combination](num_harmonic[idx_params[1]], num_params)
     end
     
     dict_hyperparams_and_fitted_components["ar"]["value"]  = DICT_ZEROS_ONES[combination](num_params, T_fitted + steps_ahead, num_scenarios)
@@ -83,11 +83,14 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
 
         if has_seasonality(seasonality, i)
             dict_hyperparams_and_fitted_components["seasonality"]["value"][i, 1:T_fitted, :]    .= components["param_$i"]["seasonality"]["value"]
-            dict_hyperparams_and_fitted_components["seasonality"]["κ"][i]                        = components["param_$i"]["seasonality"]["hyperparameters"]["κ"]
+            # dict_hyperparams_and_fitted_components["seasonality"]["κ"][i]                        = components["param_$i"]["seasonality"]["hyperparameters"]["κ"]
             if stochastic
+                dict_hyperparams_and_fitted_components["seasonality"]["κ"][i]                        = components["param_$i"]["seasonality"]["hyperparameters"]["κ"]
                 dict_hyperparams_and_fitted_components["seasonality"]["γ"][:, 1:T_fitted, i, :]     .= components["param_$i"]["seasonality"]["hyperparameters"]["γ"]
                 dict_hyperparams_and_fitted_components["seasonality"]["γ_star"][:, 1:T_fitted, i,:] .= components["param_$i"]["seasonality"]["hyperparameters"]["γ_star"]
             else
+                # println(dict_hyperparams_and_fitted_components["seasonality"]["γ"][:, i])
+                # println(components["param_$i"]["seasonality"]["hyperparameters"]["γ"])
                 dict_hyperparams_and_fitted_components["seasonality"]["γ"][:, i]       .= components["param_$i"]["seasonality"]["hyperparameters"]["γ"]
                 dict_hyperparams_and_fitted_components["seasonality"]["γ_star"][:, i,] .= components["param_$i"]["seasonality"]["hyperparameters"]["γ_star"]
             end
@@ -114,7 +117,7 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
     num_params = get_num_params(gas_model.dist)
     components = output.components
 
-    dict_hyperparams_and_fitted_components = get_dict_hyperparams_and_fitted_components_with_forecast(gas_model, output, steps_ahead, num_scenarios,combination=combination)
+    dict_hyperparams_and_fitted_components = get_dict_hyperparams_and_fitted_components_with_forecast(gas_model, output, steps_ahead, num_scenarios;combination=combination)
     dict_hyperparams_and_fitted_components["explanatories"] = zeros(n_exp, num_params)
 
     dict_hyperparams_and_fitted_components["explanatories"][:, 1] = components["param_1"]["explanatories"]
@@ -157,7 +160,7 @@ function update_rws!(dict_hyperparams_and_fitted_components::Dict{String, Any}, 
     dict_hyperparams_and_fitted_components["rws"]["b"][param, t, s] = dict_hyperparams_and_fitted_components["rws"]["b"][param, t - 1, s] + 
                                                                                     dict_hyperparams_and_fitted_components["rws"]["κ_b"][param] * dict_hyperparams_and_fitted_components["score"][param, t, s]
 
-    dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] = dict_hyperparams_and_fitted_components["rws"]["value"][param, t - 1, s] * 
+    dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] = dict_hyperparams_and_fitted_components["rws"]["value"][param, t - 1, s] + 
                                                                                         dict_hyperparams_and_fitted_components["rws"]["b"][param, t - 1, s] + 
                                                                                         dict_hyperparams_and_fitted_components["rws"]["κ"][param] * dict_hyperparams_and_fitted_components["score"][param, t, s]
 
@@ -217,7 +220,7 @@ function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any
                                                                     dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s] * 
                                                                     dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s])
                                                                     
-    end
+    end 
                                                                                 
 end
 
@@ -263,11 +266,21 @@ function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitt
     first_idx = T - T_fitted + 1
 
     ### PORQUE RECALCULAR O NUM_HARMONIC?
+   
     if isempty(num_harmonic) #caso não tenha sazonalidade, assume 1 harmonico para nao quebrar a função update_S!
         num_harmonic = Int64.(ones(get_num_params(dist)))
-    elseif length(idx_params) > length(num_harmonic) #considera os mesmos harmonicos para todos os parametros variantes, para não quebrar a update_S!
-        num_harmonic = Int64.(ones(length(idx_params)) * num_harmonic[1])
+    else
+        for i in idx_params
+            if num_harmonic[i] == 0
+                #println(num_harmonic[i])
+                num_harmonic[i] = 1
+            end
+        end
+        # length(idx_params) > length(num_harmonic) #considera os mesmos harmonicos para todos os parametros variantes, para não quebrar a update_S!
+        # num_harmonic = Int64.(ones(length(idx_params)) * num_harmonic[1])
     end
+
+    #println(num_harmonic)
 
     # if sum(vcat(order...)) == 0
     #     first_idx = 2
@@ -278,15 +291,21 @@ function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitt
     pred_y = zeros(T_fitted + steps_ahead, num_scenarios)
     pred_y[1:T_fitted, :] .= y[first_idx:end]
 
-    #Random.seed!(123)
+    Random.seed!(123)
     for t in 1:steps_ahead
         for s in 1:num_scenarios
             for i in idx_params
                 update_score!(dict_hyperparams_and_fitted_components, pred_y, d, dist_code, i, T_fitted + t, s)
-                update_rw!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s)
-                update_rws!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s)
-                update_S!(dict_hyperparams_and_fitted_components, num_harmonic, T - T_fitted, i, T_fitted + t, s)
-                if ar[i] != false
+                if has_random_walk(random_walk, i)
+                    update_rw!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s)
+                end
+                if has_random_walk_slope(random_walk_slope, i)
+                    update_rws!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s)
+                end
+                if has_seasonality(seasonality, i)
+                    update_S!(dict_hyperparams_and_fitted_components, num_harmonic, T - T_fitted, i, T_fitted + t, s)
+                end
+                if has_AR(ar, i)
                     update_AR!(dict_hyperparams_and_fitted_components, order, i, T_fitted + t, s)
                 end
                 update_params!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s; combination=combination)
@@ -303,7 +322,7 @@ Simulates scenarios considering the uncertaintity in the dynamics. Case with exo
 "
 function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitted_components::Dict{String, Any}, y::Vector{Float64}, X_forecast::Matrix{Fl}, steps_ahead::Int64, num_scenarios::Int64; combination::String="additive") where {Fl}
     
-    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
+    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic, combination = gas_model
 
     idx_params      = get_idxs_time_varying_params(time_varying_params) 
     order           = get_AR_order(ar)
@@ -318,8 +337,13 @@ function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitt
     ### PORQUE RECALCULAR O NUM_HARMONIC?
     if isempty(num_harmonic) #caso não tenha sazonalidade, assume 1 harmonico para nao quebrar a função update_S!
         num_harmonic = Int64.(ones(get_num_params(dist)))
-    elseif length(idx_params) > length(num_harmonic) #considera os mesmos harmonicos para todos os parametros variantes, para não quebrar a update_S!
-        num_harmonic = Int64.(ones(length(idx_params)) * num_harmonic[1])
+    else
+        for i in idx_params
+            if num_harmonic[i] == 0
+                #println(num_harmonic[i])
+                num_harmonic[i] = 1
+            end
+        end
     end
 
     # if sum(vcat(order...)) == 0
@@ -336,11 +360,17 @@ function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitt
         for s in 1:num_scenarios
             for i in idx_params
                 update_score!(dict_hyperparams_and_fitted_components, pred_y, d, dist_code, i, T_fitted + t, s)
-                update_rw!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s)
-                update_rws!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s)
-                update_S!(dict_hyperparams_and_fitted_components, num_harmonic, T - T_fitted, i, T_fitted + t, s)
-                if ar[i] != false
-                    update_AR!(dict_hyperparams_and_fitted_components, order, i, T_fitted + t, s)   # PORQUE SÓ EXISTE O IF PARA O CASO DO AUTOREGRESSIVO?
+                if has_random_walk(random_walk, i)
+                    update_rw!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s)
+                end
+                if has_random_walk_slope(random_walk_slope, i)
+                    update_rws!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s)
+                end
+                if has_seasonality(seasonality, i)
+                    update_S!(dict_hyperparams_and_fitted_components, num_harmonic, T - T_fitted, i, T_fitted + t, s)
+                end
+                if has_AR(ar, i)
+                    update_AR!(dict_hyperparams_and_fitted_components, order, i, T_fitted + t, s)
                 end
                 update_params!(dict_hyperparams_and_fitted_components, X_forecast, t, i, T_fitted + t, s; combination=combination)
             end

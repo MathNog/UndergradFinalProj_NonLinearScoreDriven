@@ -64,7 +64,7 @@ dist = UnobservedComponentsGAS.NormalDistribution(missing, missing)
 combination = "additive"
 
 d   = 1.0
-α   = 0.2
+α   = 0.5
 tol = 0.005
 stochastic = true
 
@@ -85,7 +85,7 @@ DICT_MODELS["LogNormal"]["carga_marina"]=UnobservedComponentsGAS.GASModel(dist, 
 num_scenarious = 500
 
 gas_model = DICT_MODELS[distribution][serie]
-fitted_model, initial_values_dict = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol);
+fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol);
 
 # fitted_model_auto = UnobservedComponentsGAS.auto_gas(gas_model, y_train, 12)
 
