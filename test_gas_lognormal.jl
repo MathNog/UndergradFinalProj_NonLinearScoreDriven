@@ -43,7 +43,7 @@ dict_series["carga_marina"]["dates"] = carga_marina[:, :timestamp]
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "ena"
+serie = "carga"
 y = log.(dict_series[serie]["values"])
 # y = log.(collect(1:141) .+ rand(Normal(0,10),141))
 dates = dict_series[serie]["dates"]
@@ -64,7 +64,7 @@ dist = UnobservedComponentsGAS.NormalDistribution(missing, missing)
 combination = "additive"
 
 d   = 1.0
-α   = 0.5
+α   = 0.991
 tol = 0.005
 stochastic = true
 
@@ -84,12 +84,15 @@ DICT_MODELS["LogNormal"]["carga_marina"]=UnobservedComponentsGAS.GASModel(dist, 
 
 num_scenarious = 500
 
-gas_model = DICT_MODELS[distribution][serie]
+# gas_model = DICT_MODELS[distribution][serie]
 # fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol);
 
-auto_model = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
+gas_model    = DICT_MODELS[distribution][serie]
+auto_model   = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
 fitted_model = auto_model[1]
-gas_model = auto_model[2]
+gas_model    = auto_model[2]
+α            = fitted_model.penalty_factor
+d            = gas_model.d
 
 std_residuals = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, true)
 residuals = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, false)

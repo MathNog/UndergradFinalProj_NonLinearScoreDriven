@@ -52,6 +52,7 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
             components["param_$i"]["level"]["hyperparameters"]["κ"] = value(model[:κ_RWS][i])
             components["param_$i"]["slope"]["value"]                = Vector(value.(model[:b][:, i]))
             components["param_$i"]["slope"]["hyperparameters"]["κ"] = value(model[:κ_b][i])
+            components["param_$i"]["slope"]["hyperparameters"]["ϕ"] = value(model[:ϕ_b])
         end
 
         if has_seasonality(seasonality, i)
