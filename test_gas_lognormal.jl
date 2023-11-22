@@ -64,7 +64,7 @@ dist = UnobservedComponentsGAS.NormalDistribution(missing, missing)
 combination = "additive"
 
 d   = 1.0
-α   = 0.991
+α   = 0.9
 tol = 0.005
 stochastic = true
 
@@ -84,8 +84,8 @@ DICT_MODELS["LogNormal"]["carga_marina"]=UnobservedComponentsGAS.GASModel(dist, 
 
 num_scenarious = 500
 
-# gas_model = DICT_MODELS[distribution][serie]
-# fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol);
+gas_model = DICT_MODELS[distribution][serie]
+fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol);
 
 gas_model    = DICT_MODELS[distribution][serie]
 auto_model   = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
@@ -101,7 +101,8 @@ forecast = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, ste
 fitted_model.fit_in_sample = FuncoesTeste.denormalize_data(fitted_model.fit_in_sample, y)
 y_train = FuncoesTeste.denormalize_data(y_train, y)
 y_test = FuncoesTeste.denormalize_data(y_test, y)
-forecast["mean"] = FuncoesTeste.denormalize_data(forecast["mean"], y)
+forecast["mean"]      = FuncoesTeste.denormalize_data(forecast["mean"], y)
+forecast["scenarios"] = FuncoesTeste.denormalize_data(forecast["scenarios"], y)
 
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 

@@ -46,7 +46,7 @@ dict_series["carga_marina"]["dates"] = carga_marina[:, :timestamp]
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "carga"
+serie = "ena"
 y = dict_series[serie]["values"]
 dates = dict_series[serie]["dates"]
 
@@ -69,32 +69,33 @@ d   = 0.0
 α   = 0.1
 tol = 0.0005
 stochastic = true
+robust = false
 
 DICT_MODELS["Gamma"] = Dict() 
 
 DICT_MODELS["Gamma"]["carga"]=UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false),  
                                                         Dict(1 => true),  Dict(1 => false), 
-                                                        Dict(1 => 12), false, stochastic, combination)
+                                                        Dict(1 => 12), robust, stochastic, combination)
 
 DICT_MODELS["Gamma"]["ena"]=UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false), 
                                                             Dict(1=>false), Dict(1 => 2), 
-                                                            Dict(1 => 12), false, stochastic, combination)
+                                                            Dict(1 => 12), robust, stochastic, combination)
 
 DICT_MODELS["Gamma"]["carga_marina"]=UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false),  
                                                         Dict(1 => true),  Dict(1 => false), 
-                                                        Dict(1 => 12), false, stochastic, combination)
+                                                        Dict(1 => 12), robust, stochastic, combination)
 
 num_scenarious = 500
 
-# gas_model = DICT_MODELS[distribution][serie]
-# fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol);
+gas_model = DICT_MODELS[distribution][serie]
+fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol);
 
-gas_model    = DICT_MODELS[distribution][serie]
-auto_model   = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
-fitted_model = auto_model[1]
-gas_model    = auto_model[2]
-α            = fitted_model.penalty_factor
-d            = gas_model.d
+# gas_model    = DICT_MODELS[distribution][serie]
+# auto_model   = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead;d_values = [1.0])
+# fitted_model = auto_model[1]
+# gas_model    = auto_model[2]
+# α            = fitted_model.penalty_factor
+# d            = gas_model.d
 
 std_residuals = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, true)
 residuals = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, false)
@@ -103,7 +104,8 @@ forecast = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, ste
 fitted_model.fit_in_sample = FuncoesTeste.denormalize_data(fitted_model.fit_in_sample, y)
 y_train = FuncoesTeste.denormalize_data(y_train, y)
 y_test = FuncoesTeste.denormalize_data(y_test, y)
-forecast["mean"] = FuncoesTeste.denormalize_data(forecast["mean"], y)
+forecast["mean"]      = FuncoesTeste.denormalize_data(forecast["mean"], y)
+forecast["scenarios"] = FuncoesTeste.denormalize_data(forecast["scenarios"], y)
 
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 

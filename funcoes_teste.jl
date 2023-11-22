@@ -257,6 +257,16 @@ function denormalize_data(y_norm::Vector{Fl}, y::Vector{Fl}) where{Fl}
     return (y_norm .- 0.5) .* (max-min) .+ min
 end
 
+function denormalize_data(X_norm::Matrix{Fl}, y::Vector{Fl}) where{Fl}
+    min = minimum(y)
+    max = maximum(y)
+    X_orig = deepcopy(X_norm)
+    for i in 1:size(X_norm, 2)
+        X_orig[:,i] = (X_norm[:,i] .- 0.5) .* (max-min) .+ min
+    end
+    return X_orig
+end
+
 function get_forecast_quantiles(forecast, steps)
     df_forecast_quantiles = DataFrame(zeros(3,6),:auto)
     rename!(df_forecast_quantiles, ["Steps","Q5%","Q25%","Q50%","Q75%","Q95%"])
@@ -276,9 +286,16 @@ function plot_forecast_histograms(fitted_model, forecast, residuals, model, seri
             forecast["scenarios"][:,i] = correct_scale(forecast["scenarios"][:,i], K, residuals)  
         end
     end
-    h1 = histogram(forecast["scenarios"][1,:], title="Histograma Previsão 1 Passo à frente", label="", bins=bins)
-    h5 = histogram(forecast["scenarios"][5,:], title="Histograma Previsão 5 Passos à frente", label="", bins=bins)
+    m1  = mean(forecast["scenarios"][1,:])
+    m5  = mean(forecast["scenarios"][5,:])
+    m12 = mean(forecast["scenarios"][12,:])
+
+    h1  = histogram(forecast["scenarios"][1,:], title="Histograma Previsão 1 Passo à frente", label="", bins=bins)
+    vline!(h1, [m1], color=:red, label="Média", linewidth=3)
+    h5  = histogram(forecast["scenarios"][5,:], title="Histograma Previsão 5 Passos à frente", label="", bins=bins)
+    vline!(h5, [m5], color=:red, label="Média", linewidth=3)
     h12 = histogram(forecast["scenarios"][12,:], title="Histograma Previsão 12 Passos à frente", label="", bins=bins)
+    vline!(h12, [m12], color=:red, label="Média", linewidth=3)
 
     plot(h1, h5, h12,  layout=grid(3,1), size=(900,800), 
         plot_title = "Histogramas dos cenários de previsão - $model - $serie")

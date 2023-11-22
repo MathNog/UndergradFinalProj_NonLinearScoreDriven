@@ -40,6 +40,7 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
     dict_hyperparams_and_fitted_components["rws"]["b"]     = DICT_ZEROS_ONES[combination](num_params, T_fitted + steps_ahead, num_scenarios)
     dict_hyperparams_and_fitted_components["rws"]["κ"]     = DICT_ZEROS_ONES[combination](num_params)
     dict_hyperparams_and_fitted_components["rws"]["κ_b"]   = DICT_ZEROS_ONES[combination](num_params)
+    dict_hyperparams_and_fitted_components["rws"]["ϕ"]     = DICT_ZEROS_ONES[combination](num_params)
 
     dict_hyperparams_and_fitted_components["seasonality"]["value"]   = DICT_ZEROS_ONES[combination](num_params, T_fitted + steps_ahead, num_scenarios)
     dict_hyperparams_and_fitted_components["seasonality"]["κ"]       = DICT_ZEROS_ONES[combination](num_params)
@@ -73,6 +74,7 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
             dict_hyperparams_and_fitted_components["rws"]["κ"][i]                     = components["param_$i"]["level"]["hyperparameters"]["κ"]
             dict_hyperparams_and_fitted_components["rws"]["b"][i, 1:T_fitted, :]     .= components["param_$i"]["slope"]["value"]
             dict_hyperparams_and_fitted_components["rws"]["κ_b"][i]                   = components["param_$i"]["slope"]["hyperparameters"]["κ"]
+            dict_hyperparams_and_fitted_components["rws"]["ϕ"][i]                     = components["param_$i"]["slope"]["hyperparameters"]["ϕ"]
         end
 
         if has_AR(ar, i)
@@ -157,7 +159,7 @@ Updates the dict_hyperparams_and_fitted_components with the random walk and slop
 "
 function update_rws!(dict_hyperparams_and_fitted_components::Dict{String, Any}, param::Int64, t::Int64, s::Int64)
     
-    dict_hyperparams_and_fitted_components["rws"]["b"][param, t, s] = dict_hyperparams_and_fitted_components["rws"]["b"][param, t - 1, s] + 
+    dict_hyperparams_and_fitted_components["rws"]["b"][param, t, s] = dict_hyperparams_and_fitted_components["rws"]["ϕ"][param]*dict_hyperparams_and_fitted_components["rws"]["b"][param, t - 1, s] + 
                                                                                     dict_hyperparams_and_fitted_components["rws"]["κ_b"][param] * dict_hyperparams_and_fitted_components["score"][param, t, s]
 
     dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] = dict_hyperparams_and_fitted_components["rws"]["value"][param, t - 1, s] + 
@@ -424,7 +426,7 @@ function predict(gas_model::GASModel, output::Output, y::Vector{Float64}, steps_
     pred_y                                 = simulate(gas_model, output, dict_hyperparams_and_fitted_components, y, steps_ahead, num_scenarios; combination=combination)
 
     dict_forec = get_mean_and_intervals_prediction(pred_y, steps_ahead, probabilistic_intervals)
-
+ 
     return dict_forec
 end
 
