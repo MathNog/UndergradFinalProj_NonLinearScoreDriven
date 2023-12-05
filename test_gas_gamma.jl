@@ -61,19 +61,19 @@ distribution = "Gamma"
 dist = UnobservedComponentsGAS.GammaDistribution(missing, missing)
 combination = "additive"
 
-d   = 0.0
-α   = 0.5
-tol = 0.00005
+d   = 1.0
+α   = 0.1
+tol = 0.0005
 stochastic = true
 
 DICT_MODELS["Gamma"] = Dict() 
 
-DICT_MODELS["Gamma"]["carga"]=UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false),  
-                                                        Dict(1 => true),  Dict(1 => false), 
+DICT_MODELS["Gamma"]["carga"]=UnobservedComponentsGAS.GASModel(dist, [true, true], d, Dict(1=>false, 2=>true),  
+                                                        Dict(1 => true, 2=>false),  Dict(1 => false, 2=>false), 
                                                         Dict(1 => 12), false, stochastic, combination)
 
-DICT_MODELS["Gamma"]["ena"]=UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false), 
-                                                            Dict(1=>false), Dict(1 => 2), 
+DICT_MODELS["Gamma"]["ena"]=UnobservedComponentsGAS.GASModel(dist, [true, true], d, Dict(1=>false, 2=>true), 
+                                                            Dict(1=>false, 2=>false), Dict(1 => 2, 2=>1), 
                                                             Dict(1 => 12), false, stochastic, combination)
 
 DICT_MODELS["Gamma"]["carga_marina"]=UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false),  
@@ -83,7 +83,7 @@ DICT_MODELS["Gamma"]["carga_marina"]=UnobservedComponentsGAS.GASModel(dist, [tru
 num_scenarious = 500
 
 gas_model = DICT_MODELS[distribution][serie]
-fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol);
+fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, max_optimization_time=240.);
 
 # gas_model = DICT_MODELS[distribution][serie]
 # auto_model = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
@@ -104,7 +104,7 @@ forecast["scenarios"] = FuncoesTeste.denormalize_data(forecast["scenarios"], y)
 
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 
-path_saida = current_path*"\\Saidas\\Benchmark\\$distribution\\"
+path_saida = current_path*"\\Saidas\\Benchmark\\2parametros\\$distribution\\"
 recover_scale = false
 
 df_hyperparams = DataFrame("d"=>d, "tol"=>tol, "α"=>α)
@@ -159,7 +159,7 @@ CSV.write(path_saida*"$(serie)_mapes.csv",mapes)
 
 " AutoARIMA Benchmark"
 
-# path_saida = current_path*"\\Saidas\\Benchmark\\AutoARIMA\\"
+# path_saida = current_path*"\\Saidas\\Benchmark\\2parametros\\AutoARIMA\\"
 
 # dict_benchmarks          = Dict()
 # dict_benchmarks["carga"] = Dict()

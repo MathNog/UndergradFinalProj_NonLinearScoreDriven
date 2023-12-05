@@ -183,7 +183,7 @@ function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, di
         println("α = λ²/var(diff(y))")
         initial_params[2] = get_initial_α(y)#mean(y)^2/var((y)) 
     end
-
+    
     return initial_params
 end
  
@@ -197,9 +197,9 @@ function get_seasonal_var(y::Vector{Fl}, seasonal_period::Int64, dist::GammaDist
         month_data = y[i:seasonal_period:end]
         num_observations = length(month_data)
         if num_observations > 0
-            α, θ = Distributions.fit(Gamma, month_data)
-            println(α, θ)
-            println(Distributions.fit(Gamma, month_data))
+            g = Distributions.fit(Gamma, month_data)
+            α = g.α
+            θ = g.θ
             variance = α*(θ^2) 
             for j in 1:num_observations
                 seasonal_variances[i + (j - 1) * seasonal_period] = variance

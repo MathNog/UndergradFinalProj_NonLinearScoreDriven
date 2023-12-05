@@ -43,7 +43,7 @@ dict_series["carga_marina"]["dates"] = carga_marina[:, :timestamp]
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "ena"
+serie = "carga"
 y = log.(dict_series[serie]["values"])
 # y = log.(collect(1:141) .+ rand(Normal(0,10),141))
 dates = dict_series[serie]["dates"]
@@ -63,15 +63,15 @@ distribution = "LogNormal"
 dist = UnobservedComponentsGAS.NormalDistribution(missing, missing)
 combination = "additive"
 
-d   = 1.0
-α   = 0.5
+d   = 0.0
+α   = 0.9
 tol = 0.005
 stochastic = true
 
 DICT_MODELS["LogNormal"] = Dict() 
 
-DICT_MODELS["LogNormal"]["carga"]=UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false),  
-                                                        Dict(1 => true),  Dict(1 => false), 
+DICT_MODELS["LogNormal"]["carga"]=UnobservedComponentsGAS.GASModel(dist, [true, true], d, Dict(1=>false, 2=>true),  
+                                                        Dict(1 => true, 2=>false),  Dict(1 => false, 2=>false), 
                                                         Dict(1 => 12), false, stochastic, combination)
 
 DICT_MODELS["LogNormal"]["ena"]=UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false), 
@@ -85,11 +85,13 @@ DICT_MODELS["LogNormal"]["carga_marina"]=UnobservedComponentsGAS.GASModel(dist, 
 num_scenarious = 500
 
 gas_model = DICT_MODELS[distribution][serie]
-# fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol);
+fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, max_optimization_time=240.);
 
-auto_model = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
-fitted_model = auto_model[1]
-gas_model = auto_model[2]
+# auto_model = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
+# fitted_model = auto_model[1]
+# gas_model = auto_model[2]
+# d = gas_model.d
+# α = fitted_model.penalty_factor
 
 std_residuals = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, true)
 residuals = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, false)
@@ -106,7 +108,7 @@ recover_scale = true
 
 recover_scale ? scale="Original" : scale="Log"
 
-path_saida = current_path*"\\Saidas\\Benchmark\\$distribution\\$scale\\"
+path_saida = current_path*"\\Saidas\\Benchmark\\2parametros\\$distribution\\$scale\\"
 
 df_hyperparams = DataFrame("d"=>d, "tol"=>tol, "α"=>α)
 CSV.write(path_saida*"$(serie)_hyperparams.csv",df_hyperparams)
