@@ -62,19 +62,19 @@ dist = UnobservedComponentsGAS.GammaDistribution(missing, missing)
 combination = "additive"
 
 d   = 1.0
-α   = 0.1
-tol = 0.0005
-stochastic = true
+α   = 0.5
+tol = 0.005
+stochastic = false
 
 DICT_MODELS["Gamma"] = Dict() 
 
-DICT_MODELS["Gamma"]["carga"]=UnobservedComponentsGAS.GASModel(dist, [true, true], d, Dict(1=>false, 2=>true),  
-                                                        Dict(1 => true, 2=>false),  Dict(1 => false, 2=>false), 
-                                                        Dict(1 => 12), false, stochastic, combination)
+DICT_MODELS["Gamma"]["carga"]=UnobservedComponentsGAS.GASModel(dist, [false, true], d, Dict(2=>false),  
+                                                        Dict(2=>true),  Dict(2=>false), 
+                                                        Dict(2 => 12), false, stochastic, combination)
 
-DICT_MODELS["Gamma"]["ena"]=UnobservedComponentsGAS.GASModel(dist, [true, true], d, Dict(1=>false, 2=>true), 
-                                                            Dict(1=>false, 2=>false), Dict(1 => 2, 2=>1), 
-                                                            Dict(1 => 12), false, stochastic, combination)
+DICT_MODELS["Gamma"]["ena"]=UnobservedComponentsGAS.GASModel(dist, [false, true], d, Dict(2=>false), 
+                                                            Dict(2=>false), Dict(2=>2), 
+                                                            Dict(2 => 12), false, stochastic, combination)
 
 DICT_MODELS["Gamma"]["carga_marina"]=UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false),  
                                                         Dict(1 => true),  Dict(1 => false), 
@@ -83,7 +83,9 @@ DICT_MODELS["Gamma"]["carga_marina"]=UnobservedComponentsGAS.GASModel(dist, [tru
 num_scenarious = 500
 
 gas_model = DICT_MODELS[distribution][serie]
-fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, max_optimization_time=240.);
+fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, max_optimization_time=240.);
+
+plot(initial_values["rws"]["values"].+initial_values["slope"]["values"].+initial_values["seasonality"]["values"].+initial_values["intercept"]["values"])
 
 # gas_model = DICT_MODELS[distribution][serie]
 # auto_model = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)

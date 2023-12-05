@@ -17,7 +17,7 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, fixed_ν::Union{Missin
     set_optimizer_attribute(model, "max_iter", number_max_iterations)
     set_optimizer_attribute(model, "max_cpu_time", max_optimization_time)
     set_optimizer_attribute(model, "tol", tol)
-    set_silent(model)
+    # set_silent(model)
 
     @info("Including parameters...")
     parameters = include_parameters(model, time_varying_params, T, dist, fixed_ν);
@@ -118,7 +118,7 @@ function fit(gas_model::GASModel, y::Vector{Fl};
         fitted_model = fit(gas_model, y, model, parameters, initial_values; α = α, robust_prop = robust_prop)
     end
 
-    return fitted_model
+    return fitted_model, initial_values
 end
 
 "
@@ -159,10 +159,15 @@ function fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{G
 
     @info("Including objective funcion...")
     include_objective_function!(model, parameters, y, T, robust, dist_code; α = α, robust_prop = robust_prop);
+    println("RWS = ", all(initial_values["rws"]["values"] .> 0))
+    println("slope = ", all(initial_values["slope"]["values"] .> 0))
+    println("seasonality = ", all(initial_values["seasonality"]["values"] .> 0))
+    println("RW = ", all(initial_values["rw"]["values"] .> 0))
+    println("AR = ", all(initial_values["ar"]["values"] .> 0))
 
     @info("Initializing variables...")
     initialize_components!(model, initial_values, gas_model);
-
+    
     @info("Optimizing the model...")
     optimize!(model)
     @info termination_status(model)

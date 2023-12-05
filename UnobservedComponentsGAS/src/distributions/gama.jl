@@ -3,8 +3,8 @@ Defines a Gamma distribution with parameters α λ.
 From a shape (α) and ratio (β) parametrization, we obtain our parametrization making λ = α/β
 "
 mutable struct GammaDistribution <: ScoreDrivenDistribution
-    λ::Union{Missing, Float64}
     α::Union{Missing, Float64}
+    λ::Union{Missing, Float64}
 end
 
 "
@@ -39,14 +39,14 @@ Evaluate the score of a Normal distribution with mean μ and variance σ², in o
 "
 function score_gama(α, λ, y) 
   
-    α<0 ? α = 1e-4 : nothing
+    α<0 ? α = 1e-2 : nothing
     λ<0 ? λ = 1e-4 : nothing
 
     ∇_α =  log(y) - y/λ + log(α) - Ψ1(α) - log(λ) + 1
     ∇_λ = (α/λ)*(y/λ-1)
     # println("----------- Score Gamma -------------")
     # println(∇_α, ∇_λ)
-    return [∇_λ; ∇_α]
+    return [∇_α; ∇_λ]
 end
 
 "
@@ -54,7 +54,7 @@ Evaluate the fisher information of a Normal distribution with mean μ and varian
 "
 function fisher_information_gama(α, λ) 
 
-    α<0 ? α = 1e-4 : nothing
+    α<0 ? α = 1e-2 : nothing
     λ<0 ? λ = 1e-4 : nothing
     
     I_λ = α/λ^2
@@ -62,28 +62,28 @@ function fisher_information_gama(α, λ)
 
     # println("--------------Fisher Gamma --------------")
     # println(I_α, I_λ)
-    return [I_λ 0; 0 I_α]
+    return [I_α 0; 0 I_λ]
 end
 
 "
 Evaluate the log pdf of a Normal distribution with mean μ and variance σ², in observation y.
 "
-function logpdf_gama(λ, α, y)
+function logpdf_gama(α, λ, y)
 
     # println("--------- LogPDF ---------------")
     # println(logpdf_gama([λ, α], y))
-    return logpdf_gama([λ, α], y)
+    return logpdf_gama([α, λ], y)
 end
 
 "
 Evaluate the log pdf of a Normal distribution with mean μ and variance σ², in observation y.
-    param[1] = λ
-    param[2] = α 
+    param[1] = α
+    param[2] = λ
 "
 function logpdf_gama(param, y)
 
-    param[2]>=0 ? α = param[2] : α = 1e-4
-    param[1]>=0 ? λ = param[1] : λ = 1e-4
+    param[1]>=0 ? α = param[1] : α = 1e-2
+    param[2]>=0 ? λ = param[2] : λ = 1e-2
     
     return -log(Γ(α)) - α*log(1/α) - α*log(λ) +(α-1)*log(y) - (α/λ)*y
 end
@@ -93,8 +93,8 @@ Evaluate the cdf of a Gamma distribution with α,λ, in observation y.
 "
 function cdf_gama(param::Vector{Float64}, y::Fl) where Fl
 
-    param[2]>=0 ? α = param[2] : α = 1e-4
-    param[1]>=0 ? λ = param[1] : λ = 1e-4
+    param[1]>=0 ? α = param[1] : α = 1e-2
+    param[2]>=0 ? λ = param[2] : λ = 1e-4
 
     return Distributions.cdf(Distributions.Gamma(α, λ/α), y)
 end
@@ -115,15 +115,15 @@ end
 
 "
 Simulates a value from a given Normal distribution.
-    param[1] = λ
-    param[2] = α  
+    param[1] = α
+    param[2] = λ  
 "
 function sample_dist(param::Vector{Float64}, dist::GammaDistribution)
     
     "A Gamma do pacote Distributions é parametrizada com shape α e scale θ"
     "Como θ = 1/β e β = α/λ, segue-se que θ = λ/α"
-    param[2]>=0 ? α = param[2] : α = 1e-4
-    param[1]>=0 ? λ = param[1] : λ = 1e-4
+    param[1]>=0 ? α = param[1] : α = 1e-2
+    param[2]>=0 ? λ = param[2] : λ = 1e-4
     return rand(Distributions.Gamma(α, λ/α))
 end
 
@@ -140,7 +140,7 @@ function get_initial_α(y::Vector{Float64})
     T = length(y)
     model = JuMP.Model(Ipopt.Optimizer)
     set_silent(model)
-    @variable(model, α >= 1e-4)  # Ensure α is positive
+    @variable(model, α >= 1e-2)  # Ensure α is positive
     @variable(model, λ[1:T] .>= 1e-4)
     register(model, :Γ, 1, Γ; autodiff = true)
     @NLobjective(model, Max, sum(-log(Γ(α)) - α*log(1/α) - α*log(λ[i]) +(α-1)*log(y[i]) - (α/λ[i])*y[i] for i in 1:T))
@@ -166,22 +166,21 @@ function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, di
     fitted_distribution = fit_mle(Gamma, y)
     
     # param[2] = λ = média
-    if time_varying_params[1]
+    if time_varying_params[2]
         println("λ = y")
-        # println(y)
-        initial_params[1] = y
+        initial_params[2] = y
     else
         println("λ = mean(y)")
-        initial_params[1] = fitted_distribution.α*fitted_distribution.θ
+        initial_params[2] = fitted_distribution.α*fitted_distribution.θ
     end
 
     # param[1] = α
-    if time_varying_params[2]
+    if time_varying_params[1]
         println("α = ??")
-        initial_params[2] = get_seasonal_var(y, maximum(seasonal_period), dist)#(scaled_score.(y, ones(T) * var(diff(y)) , y, 0.5, dist_code, 2)).^2
+        initial_params[1] = get_seasonal_var(y, maximum(seasonal_period), dist)#(scaled_score.(y, ones(T) * var(diff(y)) , y, 0.5, dist_code, 2)).^2
     else
-        println("α = λ²/var(diff(y))")
-        initial_params[2] = get_initial_α(y)#mean(y)^2/var((y)) 
+        println("α = $(fitted_distribution.α)")
+        initial_params[1] = get_initial_α(y)#mean(y)^2/var((y)) 
     end
     
     return initial_params

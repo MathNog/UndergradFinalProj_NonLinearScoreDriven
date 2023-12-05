@@ -70,8 +70,8 @@ stochastic = true
 
 DICT_MODELS["LogNormal"] = Dict() 
 
-DICT_MODELS["LogNormal"]["carga"]=UnobservedComponentsGAS.GASModel(dist, [true, true], d, Dict(1=>false, 2=>true),  
-                                                        Dict(1 => true, 2=>false),  Dict(1 => false, 2=>false), 
+DICT_MODELS["LogNormal"]["carga"]=UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false),  
+                                                        Dict(1 => true),  Dict(1 => false), 
                                                         Dict(1 => 12), false, stochastic, combination)
 
 DICT_MODELS["LogNormal"]["ena"]=UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false), 
@@ -85,7 +85,7 @@ DICT_MODELS["LogNormal"]["carga_marina"]=UnobservedComponentsGAS.GASModel(dist, 
 num_scenarious = 500
 
 gas_model = DICT_MODELS[distribution][serie]
-fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, max_optimization_time=240.);
+fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, max_optimization_time=240.);
 
 # auto_model = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
 # fitted_model = auto_model[1]
