@@ -43,7 +43,7 @@ function score_gama(α, λ, y)
     λ<0 ? λ = 1e-4 : nothing
 
     ∇_α =  log(y) - y/λ + log(α) - Ψ1(α) - log(λ) + 1
-    ∇_λ = (α/λ)*(y/λ-1)
+    ∇_λ = (α/λ)*((y/λ)-1)
     # println("----------- Score Gamma -------------")
     # println(∇_α, ∇_λ)
     return [∇_α; ∇_λ]
@@ -57,7 +57,7 @@ function fisher_information_gama(α, λ)
     α<0 ? α = 1e-2 : nothing
     λ<0 ? λ = 1e-4 : nothing
     
-    I_λ = α/λ^2
+    I_λ = α/(λ^2)
     I_α = Ψ2(α) - 1/α
 
     # println("--------------Fisher Gamma --------------")
@@ -85,7 +85,8 @@ function logpdf_gama(param, y)
     param[1]>=0 ? α = param[1] : α = 1e-2
     param[2]>=0 ? λ = param[2] : λ = 1e-2
     
-    return -log(Γ(α)) - α*log(1/α) - α*log(λ) +(α-1)*log(y) - (α/λ)*y
+    # return -log(Γ(α)) - α*log(λ) + α*log(α) + (α-1)*log(y) - (α/λ)*y
+    return Distributions.logpdf(Distributions.Gamma(α, λ/α), y)
 end
 
 "
