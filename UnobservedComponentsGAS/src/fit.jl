@@ -17,7 +17,8 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, fixed_ν::Union{Missin
     set_optimizer_attribute(model, "max_iter", number_max_iterations)
     set_optimizer_attribute(model, "max_cpu_time", max_optimization_time)
     set_optimizer_attribute(model, "tol", tol)
-    # set_silent(model)
+    # set_optimizer_attribute(model, "print_level", 7)
+    set_silent(model)
 
     @info("Including parameters...")
     parameters = include_parameters(model, time_varying_params, T, dist, fixed_ν);

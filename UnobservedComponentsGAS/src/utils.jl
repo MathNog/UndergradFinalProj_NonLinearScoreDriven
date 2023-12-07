@@ -10,11 +10,20 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
     idx_params = get_idxs_time_varying_params(time_varying_params)
 
     # Getting Fit in sample
-    if 1 ∈ idx_params
-        fit_in_sample = Vector(value.(model[:params][:, 1]))
+    if typeof(gas_model.dist) != UnobservedComponentsGAS.GammaDistribution
+        if 1 ∈ idx_params
+            fit_in_sample = Vector(value.(model[:params][:, 1]))
+        else
+            fit_in_sample = ones(size(model[:params], 1)) * value(model[:fixed_params][1])
+        end
     else
-        fit_in_sample = ones(size(model[:params], 1)) * value(model[:fixed_params][1])
+        if 2 ∈ idx_params
+            fit_in_sample = Vector(value.(model[:params][:, 2]))
+        else
+            fit_in_sample = ones(size(model[:params], 2)) * value(model[:fixed_params][2])
+        end
     end
+
 
 
     # Getting fitted parameters
@@ -52,6 +61,7 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
             components["param_$i"]["level"]["hyperparameters"]["κ"] = value(model[:κ_RWS][i])
             components["param_$i"]["slope"]["value"]                = Vector(value.(model[:b][:, i]))
             components["param_$i"]["slope"]["hyperparameters"]["κ"] = value(model[:κ_b][i])
+            components["param_$i"]["slope"]["hyperparameters"]["ϕ"] = value(model[:ϕ])
         end
 
         if has_seasonality(seasonality, i)

@@ -39,8 +39,8 @@ Evaluate the score of a Normal distribution with mean μ and variance σ², in o
 "
 function score_gama(α, λ, y) 
   
-    α<0 ? α = 1e-2 : nothing
-    λ<0 ? λ = 1e-4 : nothing
+    α <= 0 ? α = 1e-2 : nothing
+    λ <= 0 ? λ = 1e-4 : nothing
 
     ∇_α =  log(y) - y/λ + log(α) - Ψ1(α) - log(λ) + 1
     ∇_λ = (α/λ)*((y/λ)-1)
@@ -54,8 +54,8 @@ Evaluate the fisher information of a Normal distribution with mean μ and varian
 "
 function fisher_information_gama(α, λ) 
 
-    α<0 ? α = 1e-2 : nothing
-    λ<0 ? λ = 1e-4 : nothing
+    α <= 0 ? α = 1e-2 : nothing
+    λ <= 0 ? λ = 1e-4 : nothing
     
     I_λ = α/(λ^2)
     I_α = Ψ2(α) - 1/α
@@ -82,9 +82,13 @@ Evaluate the log pdf of a Normal distribution with mean μ and variance σ², in
 "
 function logpdf_gama(param, y)
 
-    param[1]>=0 ? α = param[1] : α = 1e-2
-    param[2]>=0 ? λ = param[2] : λ = 1e-2
-    
+    param[1] > 0 ? α = param[1] : α = 1e-2
+    param[2] > 0 ? λ = param[2] : λ = 1e-2
+    # println("y = ", y)
+    # println("Expressao = ",-log(Γ(α)) - α*log(λ) + α*log(α) + (α-1)*log(y) - (α/λ)*y)
+    # println("Distributions = ", Distributions.logpdf(Distributions.Gamma(α, λ/α), y))
+    # println("α = $(α)")
+    # println("λ = $(λ)")
     # return -log(Γ(α)) - α*log(λ) + α*log(α) + (α-1)*log(y) - (α/λ)*y
     return Distributions.logpdf(Distributions.Gamma(α, λ/α), y)
 end
@@ -94,8 +98,8 @@ Evaluate the cdf of a Gamma distribution with α,λ, in observation y.
 "
 function cdf_gama(param::Vector{Float64}, y::Fl) where Fl
 
-    param[1]>=0 ? α = param[1] : α = 1e-2
-    param[2]>=0 ? λ = param[2] : λ = 1e-4
+    param[1] > 0 ? α = param[1] : α = 1e-2
+    param[2] > 0 ? λ = param[2] : λ = 1e-4
 
     return Distributions.cdf(Distributions.Gamma(α, λ/α), y)
 end
@@ -123,8 +127,8 @@ function sample_dist(param::Vector{Float64}, dist::GammaDistribution)
     
     "A Gamma do pacote Distributions é parametrizada com shape α e scale θ"
     "Como θ = 1/β e β = α/λ, segue-se que θ = λ/α"
-    param[1]>=0 ? α = param[1] : α = 1e-2
-    param[2]>=0 ? λ = param[2] : λ = 1e-4
+    param[1] > 0 ? α = param[1] : α = 1e-2
+    param[2] > 0 ? λ = param[2] : λ = 1e-4
     return rand(Distributions.Gamma(α, λ/α))
 end
 
@@ -181,6 +185,7 @@ function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, di
         initial_params[1] = get_seasonal_var(y, maximum(seasonal_period), dist)#(scaled_score.(y, ones(T) * var(diff(y)) , y, 0.5, dist_code, 2)).^2
     else
         println("α = $(fitted_distribution.α)")
+        println(("α = $(get_initial_α(y))"))
         initial_params[1] = get_initial_α(y)#mean(y)^2/var((y)) 
     end
     
