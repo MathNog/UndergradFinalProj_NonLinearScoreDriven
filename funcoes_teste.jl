@@ -43,11 +43,14 @@ end
 function get_parameters(fitted_model)
     dict_params = Dict()
     for param in keys(fitted_model.components)
+        println(param)
         for (key,value) in fitted_model.components[param]
+            println(" ", key,)
             if key != "intercept"
                 for (key2, value2) in value["hyperparameters"]
+                    println("   ", key2)
                     if (key2 !="γ") && (key2!="γ_star")
-                        dict_params[key*"_"*key2] = value2
+                        dict_params[param*"_"*key*"_"*key2] = value2
                     end
                 end
             end
@@ -248,13 +251,13 @@ end
 function normalize_data(y::Vector{Fl})where{Fl}
     min = minimum(y)
     max = maximum(y)
-    return ((y .- min) ./ (max - min)) .+ 0.5
+    return ((y .- min) ./ (max - min)) .+ 1.0
 end
 
 function denormalize_data(y_norm::Vector{Fl}, y::Vector{Fl}) where{Fl}
     min = minimum(y)
     max = maximum(y)
-    return (y_norm .- 0.5) .* (max-min) .+ min
+    return (y_norm .- 1.0) .* (max-min) .+ min
 end
 
 function denormalize_data(scenarios::Matrix{Fl}, y::Vector{Fl}) where{Fl}

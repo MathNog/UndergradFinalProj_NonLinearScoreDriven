@@ -62,19 +62,19 @@ dist = UnobservedComponentsGAS.GammaDistribution(missing, missing)
 combination = "additive"
 
 d   = 1.0
-α   = 0.1
-tol = 0.0005
-stochastic = true
+α   = 0.0
+tol = 0.005
+stochastic = false
 
 DICT_MODELS["Gamma"] = Dict() 
 
-DICT_MODELS["Gamma"]["carga"]=UnobservedComponentsGAS.GASModel(dist, [true, true], d, Dict(1=>false, 2=>true),  
-                                                        Dict(1 => true, 2=>false),  Dict(1 => false, 2=>false), 
-                                                        Dict(1 => 12), false, stochastic, combination)
+DICT_MODELS["Gamma"]["carga"]=UnobservedComponentsGAS.GASModel(dist, [false, true], d, Dict(2=>false),  
+                                                        Dict(2=>true),  Dict(2=>false), 
+                                                        Dict(2 => 12), false, stochastic, combination)
 
-DICT_MODELS["Gamma"]["ena"]=UnobservedComponentsGAS.GASModel(dist, [true, true], d, Dict(1=>false, 2=>true), 
-                                                            Dict(1=>false, 2=>false), Dict(1 => 2, 2=>1), 
-                                                            Dict(1 => 12), false, stochastic, combination)
+DICT_MODELS["Gamma"]["ena"]=UnobservedComponentsGAS.GASModel(dist, [false, true], d, Dict(2=>false), 
+                                                            Dict(2=>false), Dict(2=>1), 
+                                                            Dict(2 => 12), false, stochastic, combination)
 
 DICT_MODELS["Gamma"]["carga_marina"]=UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false),  
                                                         Dict(1 => true),  Dict(1 => false), 
@@ -83,7 +83,12 @@ DICT_MODELS["Gamma"]["carga_marina"]=UnobservedComponentsGAS.GASModel(dist, [tru
 num_scenarious = 500
 
 gas_model = DICT_MODELS[distribution][serie]
-fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, max_optimization_time=240.);
+fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, max_optimization_time=240.);
+
+# fitted_model.fitted_params["param_1"]
+
+# plot(initial_values["rws"]["values"].+initial_values["slope"]["values"].+initial_values["seasonality"]["values"])
+# plot!(y_train)
 
 # gas_model = DICT_MODELS[distribution][serie]
 # auto_model = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
@@ -104,7 +109,7 @@ forecast["scenarios"] = FuncoesTeste.denormalize_data(forecast["scenarios"], y)
 
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 
-path_saida = current_path*"\\Saidas\\Benchmark\\2parametros\\$distribution\\"
+path_saida = current_path*"\\Saidas\\Benchmark\\$distribution\\"
 recover_scale = false
 
 df_hyperparams = DataFrame("d"=>d, "tol"=>tol, "α"=>α)
@@ -143,7 +148,7 @@ CSV.write(path_saida*"$(serie)_residuals_diagnostics_05.csv",residuals_diagnosti
 residuals_diagnostics_01 = FuncoesTeste.get_residuals_diagnostics(residuals, 0.01, fitted_model)
 CSV.write(path_saida*"$(serie)_residuals_diagnostics_01.csv",residuals_diagnostics_01)
 
-FuncoesTeste.plot_components(fitted_model, dates_train, distribution, "param_1", recover_scale, residuals, serie)
+FuncoesTeste.plot_components(fitted_model, dates_train, distribution, "param_2", recover_scale, residuals, serie)
 savefig(path_saida*"$(serie)_components_$(distribution).png")
 
 FuncoesTeste.plot_qqplot(std_residuals, distribution, serie)
@@ -154,7 +159,6 @@ savefig(path_saida*"$(serie)_diagnosticos_$(distribution).png")
 
 mapes = FuncoesTeste.get_mapes(y_train, y_test, fitted_model, forecast, residuals ,recover_scale)
 CSV.write(path_saida*"$(serie)_mapes.csv",mapes)
-
 
 
 " AutoARIMA Benchmark"

@@ -30,6 +30,8 @@ function include_parameters(model::Ml, time_varying_params::Vector{Bool}, T::Int
     if typeof(dist) == tLocationScaleDistribution
         JuMP.fix(model[:fixed_params][end], fixed_ν)
     end
+    # Fixando alpha para gamma
+    # @constraint(model, fixed_params[end]<=20.)
 
     parameters = Matrix(undef, T, num_params)
 
