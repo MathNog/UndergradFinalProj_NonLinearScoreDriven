@@ -72,20 +72,30 @@ function get_residuals(fitted_model, model, y, standarize)
     end
 end
 
-function plot_residuals(residuals, dates, model, std_bool, serie)
-    # std_bool==true ? res = (residuals.-mean(residuals))./std(residuals) : res = residuals
-    std_bool==true ? std_title = "Padronizados" : std_title = ""
-    plot(title="Resíduos $std_title $model - $serie")
-    plot!(dates[2:end], residuals , label="Resíduos")
+function get_quantile_residuals(fitted_model)
+    return fitted_model.residuals["q_residuals"]
 end
 
-function plot_acf_residuals(residuals, model, serie)
+function plot_residuals(residuals, dates, model, std_bool, serie, type)
+    
+    if type == "quantile"
+        plot(title="Residuos Quantílicos $model - $serie", label="Resíduos Quantílicos")
+        plot!(dates, residuals)
+    else
+        std_bool==true ? std_title = "Padronizados" : std_title = ""
+        plot(title="Resíduos $std_title $model - $serie")
+        plot!(dates[2:end], residuals , label="Resíduos")
+    end
+end
+
+function plot_acf_residuals(residuals, model, serie, type)
     
     acf_values = autocor(residuals[2:end])
     lag_values = collect(0:length(acf_values) - 1)
     conf_interval = 1.96 / sqrt(length(residuals)-1)  # 95% confidence interval
 
-    plot(title="FAC dos Residuos $model - $serie")
+    type == "quantile" ? tipo = "Quantílicos" : tipo = ""
+    plot(title="FAC dos Residuos $tipo $model - $serie")
     plot!(autocor(residuals[2:end]),seriestype=:stem, label="")
     hline!([conf_interval, -conf_interval], line = (:red, :dash), label = "IC 95%")
 end
@@ -116,8 +126,12 @@ function get_residuals_diagnostics(residuals, α, fitted_model)
     return df
 end
 
-function plot_residuals_histogram(residuals, model, serie)
-    histogram(residuals[2:end], title="Histograma Residuos $model - $serie", label="")
+function plot_residuals_histogram(residuals, model, serie, type)
+    if type == "quantile"
+        histogram(residuals[2:end], title="Histograma Residuos Quantílicos $model - $serie", label="")
+    else
+        histogram(residuals[2:end], title="Histograma Residuos $model - $serie", label="")
+    end
 end
 
 function plot_fit_in_sample(fitted_model, fit_dates, y_train, model, recover_scale, residuals, serie)
@@ -202,32 +216,43 @@ function plot_components(fitted_model, estimation_dates, model, param, recover_s
     plot(p1, p2, p3, layout = (3,1) ,plot_title = "Componentes GAS-CNO $model - $serie")#tirei o $param por hora, dado que estou usando apenas 1 parametro variante
 end
 
-function plot_qqplot(residuals, model, serie)
+function plot_qqplot(residuals, model, serie, type)
     plot(qqplot(Normal, residuals))
-    plot!(title="QQPlot Residuos $model - $serie")
+    if type == "quantile"
+        plot!(title="QQPlot Residuos Quantílicos $model - $serie")
+    else
+        plot!(title="QQPlot Residuos $model - $serie")
+    end
 end
 
-function plot_diagnosis(residuals, dates, model, std_bool, serie)
+function plot_diagnosis(residuals, dates, model, std_bool, serie, type)
+    
+    @info "QQPlot"
+    type== "quantile" ? tipo = " Quantílicos" : tipo = ""
     qq = plot(qqplot(Normal, residuals))
-    qq = plot!(title="QQPlot Residuos")
+    qq = plot!(title="QQPlot Residuos$tipo")
 
-    h = histogram(residuals, title="Histograma Residuos", label="")
+    @info "Histograma"
+    h = histogram(residuals, title="Histograma Residuos$tipo", label="")
 
+    @info "Residuos"
     # std_bool==true ? res = (residuals.-mean(residuals))./std(residuals) : res = residuals
     std_bool==true ? std_title = "Padronizados" : std_title = ""
-    r = plot(title="Resíduos $std_title")
-    r = plot!(dates[2:end], residuals , label="Resíduos")
+    r = plot(title="Resíduos $tipo$std_title")
+    r = plot!(dates[2:end], residuals , label="Resíduos$tipo")
 
+    @info "ACF"
     acf_values = autocor(residuals[2:end])
     lag_values = collect(0:length(acf_values) - 1)
     conf_interval = 1.96 / sqrt(length(residuals)-1)  # 95% confidence interval
 
-    a = plot(title="FAC dos Residuos")
+    a = plot(title="FAC dos Residuos$tipo")
     a = plot!(autocor(residuals[2:end]),seriestype=:stem, label="")
     a = hline!([conf_interval, -conf_interval], line = (:red, :dash), label = "IC 95%")
 
+    @info "Todos"
     plot(r, a, h, qq,  layout=grid(2,2), size=(1200,800), 
-        plot_title = "Diagnosticos Residuos GAS-CNO $model - $serie", title=["Resíduos $std_title" "FAC dos Residuos" "Histograma Residuos" "QQPlot Residuos"])
+        plot_title = "Diagnosticos Residuos $tipo GAS-CNO $model - $serie", title=["Resíduos $tipo$std_title" "FAC dos Residuos$tipo" "Histograma Residuos$tipo" "QQPlot Residuos$tipo"])
     
 end
 

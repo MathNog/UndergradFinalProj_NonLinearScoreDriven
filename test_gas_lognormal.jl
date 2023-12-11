@@ -91,7 +91,7 @@ gas_model = DICT_MODELS[distribution][serie]
 fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, max_optimization_time=240.);
 
 # gas_model = DICT_MODELS[distribution][serie]
-# auto_model = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead;d_values=[0.0])
+# auto_model = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
 # fitted_model = auto_model[1]
 # gas_model = auto_model[2]
 # d = gas_model.d
@@ -99,6 +99,7 @@ fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; �
 
 std_residuals = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, true)
 residuals     = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, false)
+q_residuals   = FuncoesTeste.get_quantile_residuals(fitted_model)
 forecast      = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious; combination=combination)
 
 fitted_model.fit_in_sample = FuncoesTeste.denormalize_data(fitted_model.fit_in_sample, y)
@@ -113,8 +114,8 @@ recover_scale = true
 
 recover_scale ? scale="Original" : scale="Log"
 
-path_saida = current_path*"\\Saidas\\CombNaoLinear\\Multiplicative1\\$distribution\\$scale\\"
-
+# path_saida = current_path*"\\Saidas\\CombNaoLinear\\Multiplicative1\\$distribution\\$scale\\"
+path_saida = current_path*"\\Saidas\\Benchmark\\$distribution\\Original\\"
 
 df_hyperparams = DataFrame("d"=>d, "tol"=>tol, "α"=>α)
 CSV.write(path_saida*"$(serie)_hyperparams.csv",df_hyperparams)
@@ -137,14 +138,23 @@ savefig(path_saida*"$(serie)_forecast_histograms_$(distribution).png")
 FuncoesTeste.plot_fit_forecast(fitted_model, forecast, dates_train, y_train, y_test, dates_test, distribution, residuals, recover_scale, serie)
 savefig(path_saida*"$(serie)_fit_forecast_$(distribution).png")
 
-FuncoesTeste.plot_residuals(std_residuals, dates_train, distribution, true, serie)
+FuncoesTeste.plot_residuals(std_residuals, dates_train, distribution, true, serie, "pearson")
 savefig(path_saida*"$(serie)_residuals_$(distribution).png")
 
-FuncoesTeste.plot_acf_residuals(std_residuals, distribution, serie)
+FuncoesTeste.plot_residuals(q_residuals, dates_train, distribution, true, serie, "quantile")
+savefig(path_saida*"$(serie)_quantile_residuals_$(distribution).png")
+
+FuncoesTeste.plot_acf_residuals(std_residuals, distribution, serie, "pearson")
 savefig(path_saida*"$(serie)_residuals_acf_$(distribution).png")
 
-FuncoesTeste.plot_residuals_histogram(std_residuals,distribution, serie)
+FuncoesTeste.plot_acf_residuals(q_residuals, distribution, serie, "quantile")
+savefig(path_saida*"$(serie)_quantile_residuals_acf_$(distribution).png")
+
+FuncoesTeste.plot_residuals_histogram(std_residuals,distribution, serie, "pearson")
 savefig(path_saida*"$(serie)_residuals_histogram_$(distribution).png")
+
+FuncoesTeste.plot_residuals_histogram(std_residuals,distribution, serie, "quantile")
+savefig(path_saida*"$(serie)_quantile_residuals_histogram_$(distribution).png")
 
 residuals_diagnostics_05 = FuncoesTeste.get_residuals_diagnostics(residuals, 0.05, fitted_model)
 CSV.write(path_saida*"$(serie)_residuals_diagnostics_05.csv",residuals_diagnostics_05)
@@ -152,16 +162,26 @@ CSV.write(path_saida*"$(serie)_residuals_diagnostics_05.csv",residuals_diagnosti
 residuals_diagnostics_01 = FuncoesTeste.get_residuals_diagnostics(residuals, 0.01, fitted_model)
 CSV.write(path_saida*"$(serie)_residuals_diagnostics_01.csv",residuals_diagnostics_01)
 
+q_residuals_diagnostics_05 = FuncoesTeste.get_residuals_diagnostics(q_residuals, 0.05, fitted_model)
+CSV.write(path_saida*"$(serie)_quantile_residuals_diagnostics_05.csv",q_residuals_diagnostics_05)
+
+q_residuals_diagnostics_01 = FuncoesTeste.get_residuals_diagnostics(q_residuals, 0.01, fitted_model)
+CSV.write(path_saida*"$(serie)_quantile_residuals_diagnostics_01.csv",q_residuals_diagnostics_01)
+
 FuncoesTeste.plot_components(fitted_model, dates_train, distribution, "param_1", recover_scale, residuals, serie)
 savefig(path_saida*"$(serie)_components_$(distribution).png")
 
-FuncoesTeste.plot_qqplot(std_residuals, distribution, serie)
+FuncoesTeste.plot_qqplot(std_residuals, distribution, serie, "pearson")
 savefig(path_saida*"$(serie)_qqplot_$(distribution).png")
 
-FuncoesTeste.plot_diagnosis(std_residuals, dates_train, distribution, true, serie)
+FuncoesTeste.plot_qqplot(q_residuals[2:end], distribution, serie, "quantile")
+savefig(path_saida*"$(serie)_quantile_qqplot_$(distribution).png")
+
+FuncoesTeste.plot_diagnosis(std_residuals, dates_train, distribution, true, serie, "pearson")
 savefig(path_saida*"$(serie)_diagnosticos_$(distribution).png")
+
+FuncoesTeste.plot_diagnosis(q_residuals[2:end], dates_train, distribution, true, serie, "quantile")
+savefig(path_saida*"$(serie)_quantile_diagnosticos_$(distribution).png")
 
 mapes = FuncoesTeste.get_mapes(y_train, y_test, fitted_model, forecast, residuals ,recover_scale)
 CSV.write(path_saida*"$(serie)_mapes.csv",mapes)
-
-
