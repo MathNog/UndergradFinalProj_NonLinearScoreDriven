@@ -59,10 +59,10 @@ dates_test = dates[len_train+1:end]
 
 distribution = "Gamma"
 dist = UnobservedComponentsGAS.GammaDistribution(missing, missing)
-combination = "additive"
+combination = "multiplicative"
 
-d   = 1.0
-α   = 0.0
+d   = 0.0
+α   = 0.8
 tol = 0.005
 stochastic = false
 
@@ -109,7 +109,8 @@ forecast["scenarios"] = FuncoesTeste.denormalize_data(forecast["scenarios"], y)
 
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 
-path_saida = current_path*"\\Saidas\\Benchmark\\$distribution\\"
+path_saida = current_path*"\\Saidas\\CombNaoLinear\\Multiplicative1\\$distribution\\"
+
 recover_scale = false
 
 df_hyperparams = DataFrame("d"=>d, "tol"=>tol, "α"=>α)

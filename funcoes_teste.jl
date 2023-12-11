@@ -284,9 +284,7 @@ function plot_forecast_histograms(fitted_model, forecast, residuals, model, seri
     if recover_scale
         K = get_number_parameters(fitted_model)
         for i in 1:size(forecast["scenarios"],2)
-            println(mean(forecast["scenarios"][:,i]))
             forecast["scenarios"][:,i] = correct_scale(forecast["scenarios"][:,i], K, residuals)  
-            println(mean(forecast["scenarios"][:,i]))
         end
     end
     h1 = histogram(forecast["scenarios"][1,:], title="Histograma Previsão 1 Passo à frente", label="", bins=bins)

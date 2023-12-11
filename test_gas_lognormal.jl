@@ -43,7 +43,7 @@ dict_series["carga_marina"]["dates"] = carga_marina[:, :timestamp]
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "carga"
+serie = "ena"
 y = log.(dict_series[serie]["values"])
 # y = log.(collect(1:141) .+ rand(Normal(0,10),141))
 dates = dict_series[serie]["dates"]
@@ -63,7 +63,10 @@ distribution = "LogNormal"
 dist = UnobservedComponentsGAS.NormalDistribution(missing, missing)
 combination = "additive"
 
-d   = 0.0
+# d   = 1.0
+# α   = 0.1
+
+d   = 1.0
 α   = 0.9
 tol = 0.005
 stochastic = true
@@ -87,20 +90,22 @@ num_scenarious = 500
 gas_model = DICT_MODELS[distribution][serie]
 fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, max_optimization_time=240.);
 
-# auto_model = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
+# gas_model = DICT_MODELS[distribution][serie]
+# auto_model = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead;d_values=[0.0])
 # fitted_model = auto_model[1]
 # gas_model = auto_model[2]
 # d = gas_model.d
 # α = fitted_model.penalty_factor
 
 std_residuals = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, true)
-residuals = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, false)
-forecast = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious; combination=combination)
+residuals     = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, false)
+forecast      = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious; combination=combination)
 
 fitted_model.fit_in_sample = FuncoesTeste.denormalize_data(fitted_model.fit_in_sample, y)
-y_train = FuncoesTeste.denormalize_data(y_train, y)
-y_test = FuncoesTeste.denormalize_data(y_test, y)
-forecast["mean"] = FuncoesTeste.denormalize_data(forecast["mean"], y)
+y_train                    = FuncoesTeste.denormalize_data(y_train, y)
+y_test                     = FuncoesTeste.denormalize_data(y_test, y)
+forecast["mean"]           = FuncoesTeste.denormalize_data(forecast["mean"], y)
+forecast["scenarios"]      = FuncoesTeste.denormalize_data(forecast["scenarios"], y)
 
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 
@@ -108,7 +113,8 @@ recover_scale = true
 
 recover_scale ? scale="Original" : scale="Log"
 
-path_saida = current_path*"\\Saidas\\Benchmark\\2parametros\\$distribution\\$scale\\"
+path_saida = current_path*"\\Saidas\\CombNaoLinear\\Multiplicative1\\$distribution\\$scale\\"
+
 
 df_hyperparams = DataFrame("d"=>d, "tol"=>tol, "α"=>α)
 CSV.write(path_saida*"$(serie)_hyperparams.csv",df_hyperparams)
