@@ -160,11 +160,6 @@ function fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{G
 
     @info("Including objective funcion...")
     include_objective_function!(model, parameters, y, T, robust, dist_code; α = α, robust_prop = robust_prop);
-    println("RWS = ", all(initial_values["rws"]["values"] .> 0))
-    println("slope = ", all(initial_values["slope"]["values"] .> 0))
-    println("seasonality = ", all(initial_values["seasonality"]["values"] .> 0))
-    println("RW = ", all(initial_values["rw"]["values"] .> 0))
-    println("AR = ", all(initial_values["ar"]["values"] .> 0))
 
     @info("Initializing variables...")
     initialize_components!(model, initial_values, gas_model);

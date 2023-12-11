@@ -61,7 +61,7 @@ dates_test = dates[len_train+1:end]
 
 distribution = "LogNormal"
 dist = UnobservedComponentsGAS.NormalDistribution(missing, missing)
-combination = "additive"
+combination = "multiplicative3"
 
 # d   = 1.0
 # α   = 0.1
@@ -114,8 +114,8 @@ recover_scale = true
 
 recover_scale ? scale="Original" : scale="Log"
 
-# path_saida = current_path*"\\Saidas\\CombNaoLinear\\Multiplicative1\\$distribution\\$scale\\"
-path_saida = current_path*"\\Saidas\\Benchmark\\$distribution\\Original\\"
+path_saida = current_path*"\\Saidas\\CombNaoLinear\\Multiplicative1\\$distribution\\$scale\\"
+# path_saida = current_path*"\\Saidas\\Benchmark\\$distribution\\Original\\"
 
 df_hyperparams = DataFrame("d"=>d, "tol"=>tol, "α"=>α)
 CSV.write(path_saida*"$(serie)_hyperparams.csv",df_hyperparams)

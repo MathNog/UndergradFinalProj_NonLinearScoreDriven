@@ -20,7 +20,7 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
     end
     
     T_fitted = length(output.fitted_params["param_1"])
-    DICT_ZEROS_ONES= Dict("additive"=>zeros, "multiplicative"=>ones)
+    DICT_ZEROS_ONES= Dict("additive"=>zeros, "multiplicative"=>ones, "multiplicative2"=>zeros, "multiplicative3"=>ones)
 
 
     dict_hyperparams_and_fitted_components                = Dict{String, Any}()
@@ -206,22 +206,26 @@ Updates the dict_hyperparams_and_fitted_components with the distribution paramet
 "
 function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any}, param::Int64, t::Int64, s::Int64; combination::String="additive")
 
+    m = dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] +
+        dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] +
+        dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s]
+
     if combination == "additive"
         # println("Combination $combination")
+        dict_hyperparams_and_fitted_components["params"][param, t, s] = dict_hyperparams_and_fitted_components["intercept"][param] + m + 
+                                                                        dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s]
+    elseif combination == "multiplicative"
+        # println("Combination $combination")
         dict_hyperparams_and_fitted_components["params"][param, t, s] = dict_hyperparams_and_fitted_components["intercept"][param] + 
-                                                                        dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] + 
-                                                                        dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] +
-                                                                        dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s] +
-                                                                        dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s] 
-    else
-        # t<=286 ? println("Combination $combination") : nothing
-        # t<=286 ? println(dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s]) : nothing
+                                                                    (m * dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s])
+    elseif combination == "multiplicative2"
+        # println("Combination $combination")
         dict_hyperparams_and_fitted_components["params"][param, t, s] = dict_hyperparams_and_fitted_components["intercept"][param] + 
-                                                                    (dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] * 
-                                                                    dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] *
-                                                                    dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s] * 
-                                                                    dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s])
-                                                                    
+                                                                        (m * (1 .+ dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s]))
+    else #combination == "multiplicative2"
+        # println("Combination $combination")
+        dict_hyperparams_and_fitted_components["params"][param, t, s] = dict_hyperparams_and_fitted_components["intercept"][param] + 
+                                                                        m + (1 .+ 0.05*m)*dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s]
     end 
                                                                                 
 end
