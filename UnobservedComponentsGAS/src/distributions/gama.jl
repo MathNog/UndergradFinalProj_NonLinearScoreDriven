@@ -127,6 +127,7 @@ function sample_dist(param::Vector{Float64}, dist::GammaDistribution)
     
     "A Gamma do pacote Distributions é parametrizada com shape α e scale θ"
     "Como θ = 1/β e β = α/λ, segue-se que θ = λ/α"
+    # println("α = $(param[1]) || λ = $(param[2])")
     param[1] > 0 ? α = param[1] : α = 1e-2
     param[2] > 0 ? λ = param[2] : λ = 1e-4
     return rand(Distributions.Gamma(α, λ/α))

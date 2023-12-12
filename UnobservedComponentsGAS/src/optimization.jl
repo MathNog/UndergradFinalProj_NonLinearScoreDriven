@@ -108,6 +108,7 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
 
         if combination == "additive"
             println("Combination = $combination")
+            # μ_t = m_t + s_t
             for t in 2:T
                 m[t] = include_component_in_dynamic(model, :RW, has_random_walk(random_walk, i), t, i; combination=combination) +
                         include_component_in_dynamic(model, :RWS, has_random_walk_slope(random_walk_slope, i), t, i; combination=combination) +
@@ -118,8 +119,9 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
                                 include_explanatories_in_dynamic(model, X, has_explanatory_param, t, i; combination=combination)
 
             end
-        elseif combination == "multiplicative"
+        elseif combination == "multiplicative1"
             println("Combination = $combination")
+            # μ_t = m_t × s_t
             for t in 2:T      
                 m[t] = include_component_in_dynamic(model, :RW, has_random_walk(random_walk, i), t, i; combination=combination) +
                         include_component_in_dynamic(model, :RWS, has_random_walk_slope(random_walk_slope, i), t, i; combination=combination) +
@@ -130,6 +132,7 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
             end
         elseif combination == "multiplicative2"
             println("Combination = $combination")
+            # μ_t = m_t × (1 + s_t)
             for t in 2:T                
                 m[t] = (include_component_in_dynamic(model, :RW, has_random_walk(random_walk, i), t, i; combination=combination) +
                         include_component_in_dynamic(model, :RWS, has_random_walk_slope(random_walk_slope, i), t, i; combination=combination) +
@@ -139,6 +142,7 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
             end
         else # combination -- "multiplicative3"
             println("Combination = $combination")
+            # μ_t = m_t + (1 + b × m_t) × s_t
             for t in 2:T                
                 m[t] = (include_component_in_dynamic(model, :RW, has_random_walk(random_walk, i), t, i; combination=combination) +
                         include_component_in_dynamic(model, :RWS, has_random_walk_slope(random_walk_slope, i), t, i; combination=combination) +

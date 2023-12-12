@@ -1,0 +1,4 @@
+Teste,0.05,pvalor,Rejeicao
+Jarque Bera,0.05,NaN,Não rejeita H₀
+ARCHLM,0.05,NaN,Não rejeita H₀
+Ljung Box,0.05,NaN,Não rejeita H₀
