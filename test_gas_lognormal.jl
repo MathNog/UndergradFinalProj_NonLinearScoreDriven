@@ -53,6 +53,7 @@ y_norm = FuncoesTeste.normalize_data(y)
 steps_ahead = 12
 len_train = length(y) - steps_ahead
 
+y_ref = y[1:len_train]
 y_train = y_norm[1:len_train]
 y_test = y_norm[len_train+1:end]
 
@@ -67,7 +68,7 @@ combination = "multiplicative1"
 # α   = 0.1
 
 d   = 1.0
-α   = 0.9
+α   = 0.5
 tol = 0.005
 stochastic = true
 
@@ -100,13 +101,17 @@ fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; �
 std_residuals = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, true)
 residuals     = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, false)
 q_residuals   = FuncoesTeste.get_quantile_residuals(fitted_model)
-forecast      = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious; combination=combination)
+forecast, dict_hyperparams_and_fitted_components      = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious; combination=combination)
 
-fitted_model.fit_in_sample = FuncoesTeste.denormalize_data(fitted_model.fit_in_sample, y)
-y_train                    = FuncoesTeste.denormalize_data(y_train, y)
-y_test                     = FuncoesTeste.denormalize_data(y_test, y)
-forecast["mean"]           = FuncoesTeste.denormalize_data(forecast["mean"], y)
-forecast["scenarios"]      = FuncoesTeste.denormalize_data(forecast["scenarios"], y)
+# Avaliar possiveis mudancas entre fit e forec
+dict_hyperparams_and_fitted_components["ar"]["value"][1,:,:]
+
+
+fitted_model.fit_in_sample = FuncoesTeste.denormalize_data(fitted_model.fit_in_sample, y_ref)
+y_train                    = FuncoesTeste.denormalize_data(y_train, y_ref)
+y_test                     = FuncoesTeste.denormalize_data(y_test, y_ref)
+forecast["mean"]           = FuncoesTeste.denormalize_data(forecast["mean"], y_ref)
+forecast["scenarios"]      = FuncoesTeste.denormalize_data(forecast["scenarios"], y_ref)
 
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 

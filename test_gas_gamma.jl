@@ -45,7 +45,7 @@ fit_mle(Gamma, y_train)
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "ena"
+serie = "carga"
 y = dict_series[serie]["values"]
 dates = dict_series[serie]["dates"]
 
@@ -54,6 +54,7 @@ y_norm = FuncoesTeste.normalize_data(y)
 steps_ahead = 12
 len_train = length(y) - steps_ahead
 
+y_ref = y[1:len_train]
 y_train = y_norm[1:len_train]
 y_test = y_norm[len_train+1:end]
 
@@ -105,11 +106,11 @@ residuals = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, fals
 q_residuals   = FuncoesTeste.get_quantile_residuals(fitted_model)
 forecast = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious; combination=combination)
 
-fitted_model.fit_in_sample = FuncoesTeste.denormalize_data(fitted_model.fit_in_sample, y)
-y_train = FuncoesTeste.denormalize_data(y_train, y)
-y_test = FuncoesTeste.denormalize_data(y_test, y)
-forecast["mean"] = FuncoesTeste.denormalize_data(forecast["mean"], y)
-forecast["scenarios"] = FuncoesTeste.denormalize_data(forecast["scenarios"], y)
+fitted_model.fit_in_sample = FuncoesTeste.denormalize_data(fitted_model.fit_in_sample, y_ref)
+y_train = FuncoesTeste.denormalize_data(y_train, y_ref)
+y_test = FuncoesTeste.denormalize_data(y_test, y_ref)
+forecast["mean"] = FuncoesTeste.denormalize_data(forecast["mean"], y_ref)
+forecast["scenarios"] = FuncoesTeste.denormalize_data(forecast["scenarios"], y_ref)
 
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 

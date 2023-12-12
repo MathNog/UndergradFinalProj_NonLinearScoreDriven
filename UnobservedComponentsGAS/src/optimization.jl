@@ -96,6 +96,7 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
     idx_time_varying_params = get_idxs_time_varying_params(time_varying_params) 
 
     @variable(model, c[idx_time_varying_params])
+    @variable(model, b_mult[idx_time_varying_params])
 
     has_explanatory = !ismissing(X) ? true : false
 
@@ -147,7 +148,7 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
                 m[t] = (include_component_in_dynamic(model, :RW, has_random_walk(random_walk, i), t, i; combination=combination) +
                         include_component_in_dynamic(model, :RWS, has_random_walk_slope(random_walk_slope, i), t, i; combination=combination) +
                         include_component_in_dynamic(model, :AR, has_AR(ar, i), t, i; combination=combination))
-                dynamic_aux[t] = model[:c][i] + m[t] + (1 .+ 0.05*m[t]) * include_component_in_dynamic(model, :S, has_seasonality(seasonality, i), t, i; combination=combination) +  
+                dynamic_aux[t] = model[:c][i] + m[t] + (1 .+ model[:b_mult][i]*m[t]) * include_component_in_dynamic(model, :S, has_seasonality(seasonality, i), t, i; combination=combination) +  
                                 include_explanatories_in_dynamic(model, X, has_explanatory_param, t, i; combination=combination)
             end
         end

@@ -40,7 +40,7 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
     dict_hyperparams_and_fitted_components["rws"]["b"]     = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
     dict_hyperparams_and_fitted_components["rws"]["κ"]     = zeros(num_params)
     dict_hyperparams_and_fitted_components["rws"]["κ_b"]   = zeros(num_params)
-    dict_hyperparams_and_fitted_components["rws"]["ϕ"]     = zeros(num_params)
+    dict_hyperparams_and_fitted_components["rws"]["ϕb"]     = zeros(num_params)
 
     dict_hyperparams_and_fitted_components["seasonality"]["value"]   = DICT_ZEROS_ONES[combination](num_params, T_fitted + steps_ahead, num_scenarios)
     dict_hyperparams_and_fitted_components["seasonality"]["κ"]       = DICT_ZEROS_ONES[combination](num_params)
@@ -74,7 +74,7 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
             dict_hyperparams_and_fitted_components["rws"]["κ"][i]                     = components["param_$i"]["level"]["hyperparameters"]["κ"]
             dict_hyperparams_and_fitted_components["rws"]["b"][i, 1:T_fitted, :]     .= components["param_$i"]["slope"]["value"]
             dict_hyperparams_and_fitted_components["rws"]["κ_b"][i]                   = components["param_$i"]["slope"]["hyperparameters"]["κ"]
-            dict_hyperparams_and_fitted_components["rws"]["ϕ"][i]                     = components["param_$i"]["slope"]["hyperparameters"]["ϕ"]
+            dict_hyperparams_and_fitted_components["rws"]["ϕb"][i]                     = components["param_$i"]["slope"]["hyperparameters"]["ϕb"]
         end
 
         if has_AR(ar, i)
@@ -209,9 +209,9 @@ function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any
     m = dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] +
         dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] +
         dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s]
-    println("m = ", m)
-    println("sazo = ", dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s])
-    println("Intercepto = ", dict_hyperparams_and_fitted_components["intercept"][param])
+    # println("m = ", m)
+    # println("sazo = ", dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s])
+    # println("Intercepto = ", dict_hyperparams_and_fitted_components["intercept"][param])
     if combination == "additive"
         # println("Combination $combination")
         # μ_t = m_t + s_t
@@ -322,13 +322,13 @@ function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitt
                 end
                 update_params!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s; combination=combination)
             end
-            println("Param = ", dict_hyperparams_and_fitted_components["params"][:, T_fitted + t, s])
-            println("Pred_y = ", sample_dist(dict_hyperparams_and_fitted_components["params"][:, T_fitted + t, s], dist))
+            # println("Param = ", dict_hyperparams_and_fitted_components["params"][:, T_fitted + t, s])
+            # println("Pred_y = ", sample_dist(dict_hyperparams_and_fitted_components["params"][:, T_fitted + t, s], dist))
             pred_y[T_fitted + t, s] = sample_dist(dict_hyperparams_and_fitted_components["params"][:, T_fitted + t, s], dist)
         end
     end
 
-    return pred_y
+    return pred_y, dict_hyperparams_and_fitted_components
 end
 
 "
@@ -434,12 +434,12 @@ Performs the forecast of the GAS model.
 "
 function predict(gas_model::GASModel, output::Output, y::Vector{Float64}, steps_ahead::Int64, num_scenarios::Int64; probabilistic_intervals::Vector{Float64} = [0.8, 0.95], combination::String="additive")
     
-    dict_hyperparams_and_fitted_components = get_dict_hyperparams_and_fitted_components_with_forecast(gas_model, output, steps_ahead, num_scenarios; combination=combination)
-    pred_y                                 = simulate(gas_model, output, dict_hyperparams_and_fitted_components, y, steps_ahead, num_scenarios; combination=combination)
+    dict_hyperparams_and_fitted_components         = get_dict_hyperparams_and_fitted_components_with_forecast(gas_model, output, steps_ahead, num_scenarios; combination=combination)
+    pred_y, dict_hyperparams_and_fitted_components = simulate(gas_model, output, dict_hyperparams_and_fitted_components, y, steps_ahead, num_scenarios; combination=combination)
 
     dict_forec = get_mean_and_intervals_prediction(pred_y, steps_ahead, probabilistic_intervals)
 
-    return dict_forec
+    return dict_forec, dict_hyperparams_and_fitted_components
 end
 
 "
