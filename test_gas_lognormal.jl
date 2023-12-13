@@ -38,7 +38,6 @@ valores = parse.(Float64, replace.(carga_marina[:,:value], ","=>"."))
 dict_series["carga_marina"]["values"] = valores
 dict_series["carga_marina"]["dates"] = carga_marina[:, :timestamp]
 
-
 " ----- GAS-CNO LogNormal ------ "
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
@@ -61,27 +60,27 @@ dates_test = dates[len_train+1:end]
 
 distribution = "LogNormal"
 dist = UnobservedComponentsGAS.NormalDistribution(missing, missing)
-combination = "multiplicative3"
+combination = "multiplicative1"
 
 # d   = 1.0
 # α   = 0.1
 
 d   = 1.0
-α   = 0.1
+α   = 0.9
 tol = 0.005
 stochastic = true
 
 DICT_MODELS["LogNormal"] = Dict() 
 
-DICT_MODELS["LogNormal"]["carga"]=UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false),  
+DICT_MODELS["LogNormal"]["carga"] = UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false),  
                                                         Dict(1 => true),  Dict(1 => false), 
                                                         Dict(1 => 12), false, stochastic, combination)
 
-DICT_MODELS["LogNormal"]["ena"]=UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false), 
+DICT_MODELS["LogNormal"]["ena"] = UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false), 
                                                             Dict(1=>false), Dict(1 => 1), 
                                                             Dict(1 => 12), false, stochastic, combination)
 
-DICT_MODELS["LogNormal"]["carga_marina"]=UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false),  
+DICT_MODELS["LogNormal"]["carga_marina"] = UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false),  
                                                         Dict(1 => true),  Dict(1 => false), 
                                                         Dict(1 => 12), false, stochastic, combination)
 
@@ -100,17 +99,17 @@ fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; �
 std_residuals = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, true)
 residuals     = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, false)
 q_residuals   = FuncoesTeste.get_quantile_residuals(fitted_model)
-forecast, dict_hyperparams_and_fitted_components      = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious; combination=combination)
-
-# Avaliar possiveis mudancas entre fit e forec
-dict_hyperparams_and_fitted_components["ar"]["value"][1,:,:]
-
+forecast, dict_hyperparams_and_fitted_components = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious; combination=combination)
 
 fitted_model.fit_in_sample = FuncoesTeste.denormalize_data(fitted_model.fit_in_sample, y_ref)
 y_train                    = FuncoesTeste.denormalize_data(y_train, y_ref)
 y_test                     = FuncoesTeste.denormalize_data(y_test, y_ref)
 forecast["mean"]           = FuncoesTeste.denormalize_data(forecast["mean"], y_ref)
 forecast["scenarios"]      = FuncoesTeste.denormalize_data(forecast["scenarios"], y_ref)
+
+# Avaliar possiveis mudancas entre fit e forec
+plot(dict_hyperparams_and_fitted_components["ar"]["value"][1,:,:][:,1], title = "AR")
+plot(dict_hyperparams_and_fitted_components["seasonality"]["value"][1,:,:][:,1], title = "Sazo")
 
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 

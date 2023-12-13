@@ -109,6 +109,9 @@ y_test = FuncoesTeste.denormalize_data(y_test, y_ref)
 forecast["mean"] = FuncoesTeste.denormalize_data(forecast["mean"], y_ref)
 forecast["scenarios"] = FuncoesTeste.denormalize_data(forecast["scenarios"], y_ref)
 
+# Avaliar possiveis mudancas entre fit e forec
+plot(dict_hyperparams_and_fitted_components["ar"]["value"][2,:,:][:,1], title = "AR")
+plot(dict_hyperparams_and_fitted_components["seasonality"]["value"][2,:,:][:,1], title = "Sazo")
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 
 path_saida = current_path*"\\Saidas\\CombNaoLinear\\$combination\\$distribution\\"

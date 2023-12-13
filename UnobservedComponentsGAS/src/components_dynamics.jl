@@ -43,7 +43,7 @@ function add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Dict{Int64, Int64
     @variable(model, ϕ[1:max_order, idx_params])
     @variable(model, κ_AR[idx_params])
 
-    @constraint(model, [i in idx_params], 1e-4 ≤ κ_AR[i] ≤ 10.)
+    @constraint(model, [i in idx_params], 1e-4 ≤ κ_AR[i] )#≤ 10.)
 
     for i in unique_orders
         for j in idx_params
@@ -72,8 +72,8 @@ function add_random_walk_slope!(model::Ml, s::Vector{Fl}, T::Int64, random_walk_
 
     @NLconstraint(model, [t = 2:T, j in idx_params], b[t, j] == ϕb*b[t - 1, j] + κ_b[j] * s[j][t])
     @NLconstraint(model, [t = 2:T, j in idx_params], RWS[t, j] == RWS[t - 1, j] + b[t - 1, j] + κ_RWS[j] * s[j][t])
-    @constraint(model, [j in idx_params], 1e-4 ≤ κ_RWS[j] ≤ 10.)
-    @constraint(model, [j in idx_params], 1e-4 ≤ κ_b[j] ≤ 10.)
+    @constraint(model, [j in idx_params], 1e-4 ≤ κ_RWS[j] )#≤ 10.)
+    @constraint(model, [j in idx_params], 1e-4 ≤ κ_b[j] )#≤ 10.)
     @constraint(model, 0.6 ≤ ϕ ≤ 1.)
 end
 
@@ -88,7 +88,7 @@ function add_random_walk!(model::Ml, s::Vector{Fl}, T::Int64, random_walk::Dict{
     @variable(model, κ_RW[idx_params])
 
     @NLconstraint(model, [t = 2:T, j in idx_params], RW[t, j] == RW[t-1, j] + κ_RW[j] * s[j][t])
-    @constraint(model, [j in idx_params], 1e-4 ≤ κ_RW[j] ≤ 10.)
+    @constraint(model, [j in idx_params], 1e-4 ≤ κ_RW[j] )#≤ 10.)
 end
 
 "
@@ -127,7 +127,7 @@ function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seas
 
     if stochastic
         @variable(model, κ_S[idx_params])
-        @constraint(model, [i in idx_params], 1e-4 ≤ κ_S[i] ≤ 10.)
+        @constraint(model, [i in idx_params], 1e-4 ≤ κ_S[i] )#≤ 10.)
 
         @variable(model, γ[1:unique_num_harmonic, 1:T, idx_params])
         @variable(model, γ_star[1:unique_num_harmonic, 1:T, idx_params])
@@ -185,16 +185,17 @@ function include_component_in_dynamic(model::Ml, component::Symbol, has_componen
 
     println("$component $combination $(has_component)")
     if has_component
+        println(model[component][t, idx_param])
         return model[component][t, idx_param]
     else
-        combination == "additive" ? r = 0 : r = 1
-        # if (component == :S) && (combination in ["multiplicative1", "multiplicative3"])
-        #     println("$component $combination -> Retorno = 1")
-        #     r = 1
-        # else
-        #     println("$component $combination -> Retorno = 0")
-        #     r = 0
-        # end
+        # combination == "additive" ? r = 0 : r = 1
+        if (component == :S) && (combination in ["multiplicative1", "multiplicative3"])
+            println("$component $combination -> Retorno = 1")
+            r = 1
+        else
+            println("$component $combination -> Retorno = 0")
+            r = 0
+        end
         println("r = $r")
         return r
     end
