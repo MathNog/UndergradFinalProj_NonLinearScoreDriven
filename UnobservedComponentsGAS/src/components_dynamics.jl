@@ -183,10 +183,19 @@ Used in the construction of the JuMP model.
 "
 function include_component_in_dynamic(model::Ml, component::Symbol, has_component::Bool, t::Int64, idx_param::Int64; combination::String="additive") where Ml
 
+    println("$component $combination $(has_component)")
     if has_component
         return model[component][t, idx_param]
     else
         combination == "additive" ? r = 0 : r = 1
+        # if (component == :S) && (combination in ["multiplicative1", "multiplicative3"])
+        #     println("$component $combination -> Retorno = 1")
+        #     r = 1
+        # else
+        #     println("$component $combination -> Retorno = 0")
+        #     r = 0
+        # end
+        println("r = $r")
         return r
     end
 end

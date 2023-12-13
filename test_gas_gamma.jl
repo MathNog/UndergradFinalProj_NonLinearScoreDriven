@@ -40,12 +40,9 @@ dict_series["carga_marina"]["dates"] = carga_marina[:, :timestamp]
 
 " -------------------- GAS-CNO Gamma -------------------- "
 
-fit_mle(Gamma, y_train)
-
-
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "carga"
+serie = "ena"
 y = dict_series[serie]["values"]
 dates = dict_series[serie]["dates"]
 
@@ -104,7 +101,7 @@ fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; Î
 std_residuals = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, true)
 residuals = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, false)
 q_residuals   = FuncoesTeste.get_quantile_residuals(fitted_model)
-forecast = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious; combination=combination)
+forecast, dict_hyperparams_and_fitted_components = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious; combination=combination)
 
 fitted_model.fit_in_sample = FuncoesTeste.denormalize_data(fitted_model.fit_in_sample, y_ref)
 y_train = FuncoesTeste.denormalize_data(y_train, y_ref)

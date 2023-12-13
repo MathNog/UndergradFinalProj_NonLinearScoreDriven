@@ -45,7 +45,6 @@ include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
 serie = "ena"
 y = log.(dict_series[serie]["values"])
-# y = log.(collect(1:141) .+ rand(Normal(0,10),141))
 dates = dict_series[serie]["dates"]
 
 y_norm = FuncoesTeste.normalize_data(y)
@@ -62,13 +61,13 @@ dates_test = dates[len_train+1:end]
 
 distribution = "LogNormal"
 dist = UnobservedComponentsGAS.NormalDistribution(missing, missing)
-combination = "multiplicative1"
+combination = "multiplicative3"
 
 # d   = 1.0
 # α   = 0.1
 
 d   = 1.0
-α   = 0.5
+α   = 0.1
 tol = 0.005
 stochastic = true
 
