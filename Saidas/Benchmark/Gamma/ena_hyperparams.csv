@@ -1,2 +1,2 @@
-d,tol,α
-1.0,0.005,0.1
+d,tol,α,stochastic
+1.0,0.05,0.98,true

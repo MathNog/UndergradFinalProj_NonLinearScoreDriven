@@ -74,7 +74,7 @@ function add_random_walk_slope!(model::Ml, s::Vector{Fl}, T::Int64, random_walk_
     @NLconstraint(model, [t = 2:T, j in idx_params], RWS[t, j] == RWS[t - 1, j] + b[t - 1, j] + κ_RWS[j] * s[j][t])
     @constraint(model, [j in idx_params], 1e-4 ≤ κ_RWS[j] )#≤ 10.)
     @constraint(model, [j in idx_params], 1e-4 ≤ κ_b[j] )#≤ 10.)
-    @constraint(model, 0.6 ≤ ϕ ≤ 1.)
+    @constraint(model, 0.9 ≤ ϕb ≤ 1.)
 end
 
 "
@@ -183,20 +183,20 @@ Used in the construction of the JuMP model.
 "
 function include_component_in_dynamic(model::Ml, component::Symbol, has_component::Bool, t::Int64, idx_param::Int64; combination::String="additive") where Ml
 
-    println("$component $combination $(has_component)")
+    # println("$component $combination $(has_component)")
     if has_component
-        println(model[component][t, idx_param])
+        # println(model[component][t, idx_param])
         return model[component][t, idx_param]
     else
         # combination == "additive" ? r = 0 : r = 1
         if (component == :S) && (combination in ["multiplicative1", "multiplicative3"])
-            println("$component $combination -> Retorno = 1")
+            # println("$component $combination -> Retorno = 1")
             r = 1
         else
-            println("$component $combination -> Retorno = 0")
+            # println("$component $combination -> Retorno = 0")
             r = 0
         end
-        println("r = $r")
+        # println("r = $r")
         return r
     end
 end

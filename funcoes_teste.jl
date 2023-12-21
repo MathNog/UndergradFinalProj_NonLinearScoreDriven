@@ -49,6 +49,7 @@ function get_parameters(fitted_model)
             if key != "intercept"
                 for (key2, value2) in value["hyperparameters"]
                     println("   ", key2)
+                    # println("   ", value2)
                     if (key2 !="γ") && (key2!="γ_star")
                         dict_params[param*"_"*key*"_"*key2] = value2
                     end
@@ -76,26 +77,26 @@ function get_quantile_residuals(fitted_model)
     return fitted_model.residuals["q_residuals"]
 end
 
-function plot_residuals(residuals, dates, model, std_bool, serie, type)
+function plot_residuals(residuals, dates, model, std_bool, serie, type, combination)
     
     if type == "quantile"
-        plot(title="Residuos Quantílicos $model - $serie")
+        plot(title="Residuos Quantílicos $model - $serie - $combination")
         plot!(dates, residuals, label="Resíduos Quantílicos")
     else
         std_bool==true ? std_title = "Padronizados" : std_title = ""
-        plot(title="Resíduos $std_title $model - $serie")
+        plot(title="Resíduos $std_title $model - $serie - $combination")
         plot!(dates[2:end], residuals , label="Resíduos")
     end
 end
 
-function plot_acf_residuals(residuals, model, serie, type)
+function plot_acf_residuals(residuals, model, serie, type, combination)
     
     acf_values = autocor(residuals[2:end])
     lag_values = collect(0:length(acf_values) - 1)
     conf_interval = 1.96 / sqrt(length(residuals)-1)  # 95% confidence interval
 
     type == "quantile" ? tipo = "Quantílicos" : tipo = ""
-    plot(title="FAC dos Residuos $tipo $model - $serie")
+    plot(title="FAC dos Residuos $tipo $model - $serie - $combination", titlefontsize=12)
     plot!(autocor(residuals[2:end]),seriestype=:stem, label="")
     hline!([conf_interval, -conf_interval], line = (:red, :dash), label = "IC 95%")
 end
@@ -126,15 +127,15 @@ function get_residuals_diagnostics(residuals, α, fitted_model)
     return df
 end
 
-function plot_residuals_histogram(residuals, model, serie, type)
+function plot_residuals_histogram(residuals, model, serie, type, combination)
     if type == "quantile"
-        histogram(residuals[2:end], title="Histograma Residuos Quantílicos $model - $serie", label="")
+        histogram(residuals[2:end], title="Histograma Residuos Quantílicos $model - $serie - $combination", label="", titlefontsize=12)
     else
-        histogram(residuals[2:end], title="Histograma Residuos $model - $serie", label="")
+        histogram(residuals[2:end], title="Histograma Residuos $model - $serie - $combination", label="", titlefontsize=12)
     end
 end
 
-function plot_fit_in_sample(fitted_model, fit_dates, y_train, model, recover_scale, residuals, serie)
+function plot_fit_in_sample(fitted_model, fit_dates, y_train, model, recover_scale, residuals, serie, combination)
     
     fit_in_sample = fitted_model.fit_in_sample[2:end]
     # println(fit_in_sample)
@@ -146,11 +147,11 @@ function plot_fit_in_sample(fitted_model, fit_dates, y_train, model, recover_sca
     # println(fit_in_sample)
     plot(fit_dates[2:end], y_train[2:end], label="Série")
     plot!(fit_dates[2:end], fit_in_sample[1:end], label="Fit in sample")    
-    plot!(title=" Fit in sample GAS-CNO $model - $serie")
+    plot!(title=" Fit in sample GAS-CNO $model - $serie - $combination", titlefontsize=12)
     
 end
 
-function plot_forecast(fitted_model, forecast, y_test, forecast_dates, model, residuals, recover_scale, serie)
+function plot_forecast(fitted_model, forecast, y_test, forecast_dates, model, residuals, recover_scale, serie, combination)
 
     if recover_scale
         y_test = exp.(y_test)
@@ -159,13 +160,13 @@ function plot_forecast(fitted_model, forecast, y_test, forecast_dates, model, re
     else
         forecast_mean = forecast["mean"]
     end
-    p = plot(title = "Forecast GAS-CNO $model - $serie")
+    p = plot(title = "Forecast GAS-CNO $model - $serie - $combination")
     p = plot!(forecast_dates, y_test, label="Série")
     p = plot!(forecast_dates, forecast_mean, label="Forecast", color="red")
     display(p)
 end
 
-function plot_fit_forecast(fitted_model, forecast,fit_dates, y_train, y_test, forecast_dates, model, residuals, recover_scale, serie)
+function plot_fit_forecast(fitted_model, forecast,fit_dates, y_train, y_test, forecast_dates, model, residuals, recover_scale, serie, combination)
     fit_in_sample = fitted_model.fit_in_sample[2:end]
     dates = vcat(fit_dates, forecast_dates)
     if recover_scale
@@ -178,7 +179,7 @@ function plot_fit_forecast(fitted_model, forecast,fit_dates, y_train, y_test, fo
         forecast_mean = forecast["mean"]
     end
     y = vcat(y_train, y_test)
-    p = plot(title = "Fit and Forecast GAS-CNO $model - $serie")
+    p = plot(title = "Fit and Forecast GAS-CNO $model - $serie - $combination", titlefontsize=12)
     p = plot!(dates[2:end], y[2:end], label="Série")
     p = plot!(fit_dates[2:end], fit_in_sample[1:end], label="Fit in sample") 
     p = plot!(forecast_dates, forecast_mean, label="Forecast", color="red")
@@ -203,7 +204,7 @@ function get_components(fitted_model, param, recover_scale, residuals)
     return components
 end
 
-function plot_components(fitted_model, estimation_dates, model, param, recover_scale, residuals, serie)
+function plot_components(fitted_model, estimation_dates, model, param, recover_scale, residuals, serie, combination)
     components = get_components(fitted_model, param, recover_scale, residuals)
     
     "level" in keys(components) ? level = components["level"] : level = ones(length(estimation_dates)).*missing
@@ -213,19 +214,19 @@ function plot_components(fitted_model, estimation_dates, model, param, recover_s
     p1 = plot(estimation_dates[2:end], level[2:end], label="Level")
     p2 = plot(estimation_dates[2:end],slope[2:end], label="Slope")
     p3 = plot(estimation_dates[2:end], seasonality[2:end], label="Seasonality")
-    plot(p1, p2, p3, layout = (3,1) ,plot_title = "Componentes GAS-CNO $model - $serie")#tirei o $param por hora, dado que estou usando apenas 1 parametro variante
+    plot(p1, p2, p3, layout = (3,1) ,plot_title = "Componentes GAS-CNO $model - $serie - $combination", plot_titlefontsize=12)#tirei o $param por hora, dado que estou usando apenas 1 parametro variante
 end
 
-function plot_qqplot(residuals, model, serie, type)
+function plot_qqplot(residuals, model, serie, type, combination)
     plot(qqplot(Normal, residuals))
     if type == "quantile"
-        plot!(title="QQPlot Residuos Quantílicos $model - $serie")
+        plot!(title="QQPlot Residuos Quantílicos $model - $serie - $combination", titlefontsize=12)
     else
-        plot!(title="QQPlot Residuos $model - $serie")
+        plot!(title="QQPlot Residuos $model - $serie - $combination", titlefontsize=12)
     end
 end
 
-function plot_diagnosis(residuals, dates, model, std_bool, serie, type)
+function plot_diagnosis(residuals, dates, model, std_bool, serie, type, combination)
     
     @info "QQPlot"
     type== "quantile" ? tipo = " Quantílicos" : tipo = ""
@@ -252,10 +253,9 @@ function plot_diagnosis(residuals, dates, model, std_bool, serie, type)
 
     @info "Todos"
     plot(r, a, h, qq,  layout=grid(2,2), size=(1200,800), 
-        plot_title = "Diagnosticos Residuos $tipo GAS-CNO $model - $serie", title=["Resíduos $tipo$std_title" "FAC dos Residuos$tipo" "Histograma Residuos$tipo" "QQPlot Residuos$tipo"])
+        plot_title = "Diagnosticos Residuos $tipo GAS-CNO $model - $serie - $combination", title=["Resíduos $tipo$std_title" "FAC dos Residuos$tipo" "Histograma Residuos$tipo" "QQPlot Residuos$tipo"])
     
 end
-
 function get_mapes(y_train, y_test, fitted_model, forecast, residuals, recover_scale)
     
     fit_in_sample = fitted_model.fit_in_sample[2:end]
@@ -276,13 +276,47 @@ end
 function normalize_data(y::Vector{Fl})where{Fl}
     min = minimum(y)
     max = maximum(y)
-    return ((y .- min) ./ (max - min)) .+ 1.0
+    return ((y .- min) ./ (max - min)) .+ 1.
 end
 
 function denormalize_data(y_norm::Vector{Fl}, y::Vector{Fl}) where{Fl}
     min = minimum(y)
     max = maximum(y)
-    return (y_norm .- 1.0) .* (max-min) .+ min
+    return (y_norm .- 1.) .* (max-min) .+ min
+end
+
+function scale_data(vec::Vector{T}, min_val::T, max_val::T) where T
+    # Find the minimum and maximum values of the vector
+    min_vec = minimum(vec)
+    max_vec = maximum(vec)
+
+    # Scale the vector to the desired range
+    scaled_vec = min_val .+ (max_val - min_val) .* (vec .- min_vec) ./ (max_vec - min_vec)
+
+    return scaled_vec
+end
+
+function unscale_data(scaled_vec::Vector{T}, original_vec::Vector{T}) where T
+    # Find the minimum and maximum values of the original vector
+    min_original = minimum(original_vec)
+    max_original = maximum(original_vec)
+
+    # Find the minimum and maximum values of the scaled vector
+    min_scaled = minimum(scaled_vec)
+    max_scaled = maximum(scaled_vec)
+
+    # Unscaled the vector to the original range
+    unscaled_vec = min_original .+ (max_original - min_original) .* (scaled_vec .- min_scaled) ./ (max_scaled - min_scaled)
+
+    return unscaled_vec
+end
+
+function unscale_data(scenarios::Matrix{T}, original_vec::Vector{T}) where{T}
+    scenarios_orig = deepcopy(scenarios)
+    for s in 1:size(scenarios, 2)
+        scenarios_orig[:,s] = unscale_data(scenarios[:,s], original_vec)
+    end
+    return scenarios_orig
 end
 
 function denormalize_data(scenarios::Matrix{Fl}, y::Vector{Fl}) where{Fl}
@@ -304,7 +338,7 @@ function get_forecast_quantiles(forecast, steps)
 end
 
 
-function plot_forecast_histograms(fitted_model, forecast, residuals, model, serie, bins, recover_scale)
+function plot_forecast_histograms(fitted_model, forecast, residuals, model, serie, bins, recover_scale, combination)
 
     if recover_scale
         K = get_number_parameters(fitted_model)
@@ -317,7 +351,7 @@ function plot_forecast_histograms(fitted_model, forecast, residuals, model, seri
     h12 = histogram(forecast["scenarios"][12,:], title="Histograma Previsão 12 Passos à frente", label="", bins=bins)
 
     plot(h1, h5, h12,  layout=grid(3,1), size=(900,800), 
-        plot_title = "Histogramas dos cenários de previsão - $model - $serie")
+        plot_title = "Histogramas dos cenários de previsão - $model - $serie - $combination")
     
 end
 end

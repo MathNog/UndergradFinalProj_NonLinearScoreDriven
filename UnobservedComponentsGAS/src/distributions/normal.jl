@@ -95,6 +95,23 @@ function check_positive_constrainst(dist::NormalDistribution)
 end
 
 
+
+function get_initial_σ(y::Vector{Float64})
+
+    T = length(y)
+    model = JuMP.Model(Ipopt.Optimizer)
+    set_silent(model)
+    @variable(model, σ >= 1e-2)  # Ensure α is positive
+    @variable(model, μ[1:T] .>= 1e-4)
+    @NLobjective(model, Max, sum(-0.5 * log(2 * π * σ) - ((y[i] - μ[i])^2)/(2 * σ^2) for i in 1:T))
+    optimize!(model)
+    if has_values(model)
+        return JuMP.value.(σ)
+    else
+        return fit_mle(Normal, y).σ
+    end 
+end
+
 "
 Returns a dictionary with the initial values of the parameters of Normal distribution that will be used in the model initialization.
 "
@@ -115,7 +132,7 @@ function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, di
     if time_varying_params[2]
         initial_params[2] = get_seasonal_var(y, maximum(seasonal_period), dist) #(scaled_score.(y, ones(T) * var(diff(y)) , y, 0.5, dist_code, 2)).^2
     else
-        initial_params[2] = var(diff(y))
+        initial_params[2] = var(diff(y))#get_initial_σ(y)^2#
     end
 
     return initial_params

@@ -286,7 +286,7 @@ function auto_gas(gas_model::GASModel, y::Vector{Fl}, steps_ahead::Int64;
 
             return sqrt(mean((y_val .- forec["mean"]).^2)) #output.information_criteria["aicc"] #sqrt(mean((y_val .- forec["mean"]).^2))
         end
-
+        
         Random.seed!(123)
         time = @elapsed optimization_result = Optim.optimize(get_metric, 0.0, 1.0, GoldenSection(); time_limit = 0.1, r_tol = 0.01, abs_tol = 0.001, iterations = 50)
     

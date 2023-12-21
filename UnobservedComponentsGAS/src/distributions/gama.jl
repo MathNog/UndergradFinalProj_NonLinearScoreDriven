@@ -99,7 +99,7 @@ Evaluate the cdf of a Gamma distribution with α,λ, in observation y.
 function cdf_gama(param::Vector{Float64}, y::Fl) where Fl
 
     param[1] > 0 ? α = param[1] : α = 1e-2
-    param[2] > 0 ? λ = param[2] : λ = 1e-4
+    param[2] > 0 ? λ = param[2] : λ = 1e-2
 
     return Distributions.cdf(Distributions.Gamma(α, λ/α), y)
 end
@@ -129,7 +129,8 @@ function sample_dist(param::Vector{Float64}, dist::GammaDistribution)
     "Como θ = 1/β e β = α/λ, segue-se que θ = λ/α"
     # println("α = $(param[1]) || λ = $(param[2])")
     param[1] > 0 ? α = param[1] : α = 1e-2
-    param[2] > 0 ? λ = param[2] : λ = 1e-4
+    param[2] > 0 ? λ = param[2] : λ = 1e-2
+    println(param[2])
     return rand(Distributions.Gamma(α, λ/α))
 end
 

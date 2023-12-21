@@ -143,6 +143,7 @@ function update_score!(dict_hyperparams_and_fitted_components::Dict{String, Any}
                                                                                 dict_hyperparams_and_fitted_components["params"][3, t - 1, s], 
                                                                                 pred_y[t - 1, s], d, dist_code, param)
     end
+    # println("Score = ", dict_hyperparams_and_fitted_components["score"][param, t, s])
 end
 
 "
@@ -151,7 +152,8 @@ Updates the dict_hyperparams_and_fitted_components with the random walk scenario
 function update_rw!(dict_hyperparams_and_fitted_components::Dict{String, Any}, param::Int64, t::Int64, s::Int64)
 
     dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] = dict_hyperparams_and_fitted_components["rw"]["value"][param, t - 1, s] + 
-                                                                                        dict_hyperparams_and_fitted_components["rw"]["κ"][param] * dict_hyperparams_and_fitted_components["score"][param, t, s] 
+                                                                                        dict_hyperparams_and_fitted_components["rw"]["κ"][param] * dict_hyperparams_and_fitted_components["score"][param, t, s]
+    # println("RW = ", dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s]) 
 end
 
 "
@@ -159,13 +161,13 @@ Updates the dict_hyperparams_and_fitted_components with the random walk and slop
 "
 function update_rws!(dict_hyperparams_and_fitted_components::Dict{String, Any}, param::Int64, t::Int64, s::Int64)
     
-    dict_hyperparams_and_fitted_components["rws"]["b"][param, t, s] = dict_hyperparams_and_fitted_components["rws"]["ϕ"][param]*dict_hyperparams_and_fitted_components["rws"]["b"][param, t - 1, s] + 
+    dict_hyperparams_and_fitted_components["rws"]["b"][param, t, s] = dict_hyperparams_and_fitted_components["rws"]["ϕb"][param]*dict_hyperparams_and_fitted_components["rws"]["b"][param, t - 1, s] + 
                                                                                     dict_hyperparams_and_fitted_components["rws"]["κ_b"][param] * dict_hyperparams_and_fitted_components["score"][param, t, s]
 
     dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] = dict_hyperparams_and_fitted_components["rws"]["value"][param, t - 1, s] + 
                                                                                         dict_hyperparams_and_fitted_components["rws"]["b"][param, t - 1, s] + 
                                                                                         dict_hyperparams_and_fitted_components["rws"]["κ"][param] * dict_hyperparams_and_fitted_components["score"][param, t, s]
-
+    # println("RWS = ", dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s])
 end
 
 "
@@ -190,6 +192,7 @@ function update_S!(dict_hyperparams_and_fitted_components::Dict{String, Any}, nu
         dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s] = sum(dict_hyperparams_and_fitted_components["seasonality"]["γ"][j, param]*cos(2 * π * j * (diff_T + t)/(num_harmonic[param] * 2)) +
                                                                             dict_hyperparams_and_fitted_components["seasonality"]["γ_star"][j, param]*sin(2 * π * j * (diff_T + t)/(num_harmonic[param] * 2)) for j in 1:num_harmonic[param])
     end
+    # println("Sazo = ",dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s])
 end
 
 "
@@ -199,6 +202,7 @@ function update_AR!(dict_hyperparams_and_fitted_components::Dict{String, Any}, o
 
     dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s] = sum(dict_hyperparams_and_fitted_components["ar"]["ϕ"][:, param][p] * dict_hyperparams_and_fitted_components["ar"]["value"][param, t - p, s] for p in order[param]) + 
                                                                                 dict_hyperparams_and_fitted_components["ar"]["κ"][param] * dict_hyperparams_and_fitted_components["score"][param, t, s]
+    # println("AR = ", dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s])
 end
 
 "
@@ -233,6 +237,7 @@ function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any
         dict_hyperparams_and_fitted_components["params"][param, t, s] = dict_hyperparams_and_fitted_components["intercept"][param] + 
                                                                         m + (1 .+ 0.05*m)*dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s]
     end 
+    # println("Param = ",dict_hyperparams_and_fitted_components["params"][param, t, s])
                                                                                 
 end
 
