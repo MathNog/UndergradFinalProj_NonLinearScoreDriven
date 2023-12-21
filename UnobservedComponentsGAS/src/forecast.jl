@@ -20,7 +20,7 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
     end
     
     T_fitted = length(output.fitted_params["param_1"])
-    DICT_ZEROS_ONES= Dict("additive"=>zeros, "multiplicative"=>ones)
+    DICT_ZEROS_ONES= Dict("additive"=>zeros, "multiplicative1"=>ones, "multiplicative2"=>zeros, "multiplicative3"=>ones)
 
 
     dict_hyperparams_and_fitted_components                = Dict{String, Any}()
@@ -29,18 +29,18 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
     dict_hyperparams_and_fitted_components["seasonality"] = Dict{String, Any}()    
     dict_hyperparams_and_fitted_components["ar"]          = Dict{String, Any}()
 
-    dict_hyperparams_and_fitted_components["params"]       = DICT_ZEROS_ONES[combination](num_params, T_fitted + steps_ahead, num_scenarios)
-    dict_hyperparams_and_fitted_components["intercept"]    = DICT_ZEROS_ONES[combination](num_params)
-    dict_hyperparams_and_fitted_components["score"]        = DICT_ZEROS_ONES[combination](num_params, T_fitted + steps_ahead, num_scenarios)
+    dict_hyperparams_and_fitted_components["params"]       = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
+    dict_hyperparams_and_fitted_components["intercept"]    = zeros(num_params)
+    dict_hyperparams_and_fitted_components["score"]        = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
   
-    dict_hyperparams_and_fitted_components["rw"]["value"]  = DICT_ZEROS_ONES[combination](num_params, T_fitted + steps_ahead, num_scenarios)
-    dict_hyperparams_and_fitted_components["rw"]["κ"]      = DICT_ZEROS_ONES[combination](num_params)
+    dict_hyperparams_and_fitted_components["rw"]["value"]  = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
+    dict_hyperparams_and_fitted_components["rw"]["κ"]      = zeros(num_params)
 
-    dict_hyperparams_and_fitted_components["rws"]["value"] = DICT_ZEROS_ONES[combination](num_params, T_fitted + steps_ahead, num_scenarios)
-    dict_hyperparams_and_fitted_components["rws"]["b"]     = DICT_ZEROS_ONES[combination](num_params, T_fitted + steps_ahead, num_scenarios)
-    dict_hyperparams_and_fitted_components["rws"]["κ"]     = DICT_ZEROS_ONES[combination](num_params)
-    dict_hyperparams_and_fitted_components["rws"]["κ_b"]   = DICT_ZEROS_ONES[combination](num_params)
-    dict_hyperparams_and_fitted_components["rws"]["ϕ"]     = DICT_ZEROS_ONES[combination](num_params)
+    dict_hyperparams_and_fitted_components["rws"]["value"] = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
+    dict_hyperparams_and_fitted_components["rws"]["b"]     = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
+    dict_hyperparams_and_fitted_components["rws"]["κ"]     = zeros(num_params)
+    dict_hyperparams_and_fitted_components["rws"]["κ_b"]   = zeros(num_params)
+    dict_hyperparams_and_fitted_components["rws"]["ϕb"]     = zeros(num_params)
 
     dict_hyperparams_and_fitted_components["seasonality"]["value"]   = DICT_ZEROS_ONES[combination](num_params, T_fitted + steps_ahead, num_scenarios)
     dict_hyperparams_and_fitted_components["seasonality"]["κ"]       = DICT_ZEROS_ONES[combination](num_params)
@@ -53,9 +53,9 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
         dict_hyperparams_and_fitted_components["seasonality"]["γ_star"]  = DICT_ZEROS_ONES[combination](num_harmonic[idx_params[1]], num_params)
     end
     
-    dict_hyperparams_and_fitted_components["ar"]["value"]  = DICT_ZEROS_ONES[combination](num_params, T_fitted + steps_ahead, num_scenarios)
-    dict_hyperparams_and_fitted_components["ar"]["ϕ"]      = DICT_ZEROS_ONES[combination](maximum(vcat(order...)), num_params)
-    dict_hyperparams_and_fitted_components["ar"]["κ"]      = DICT_ZEROS_ONES[combination](num_params)
+    dict_hyperparams_and_fitted_components["ar"]["value"]  = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
+    dict_hyperparams_and_fitted_components["ar"]["ϕ"]      = zeros(maximum(vcat(order...)), num_params)
+    dict_hyperparams_and_fitted_components["ar"]["κ"]      = zeros(num_params)
 
     for i in 1:num_params
         dict_hyperparams_and_fitted_components["params"][i, 1:T_fitted, :] .= output.fitted_params["param_$i"]
@@ -74,7 +74,7 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
             dict_hyperparams_and_fitted_components["rws"]["κ"][i]                     = components["param_$i"]["level"]["hyperparameters"]["κ"]
             dict_hyperparams_and_fitted_components["rws"]["b"][i, 1:T_fitted, :]     .= components["param_$i"]["slope"]["value"]
             dict_hyperparams_and_fitted_components["rws"]["κ_b"][i]                   = components["param_$i"]["slope"]["hyperparameters"]["κ"]
-            dict_hyperparams_and_fitted_components["rws"]["ϕ"][i]                     = components["param_$i"]["slope"]["hyperparameters"]["ϕ"]
+            dict_hyperparams_and_fitted_components["rws"]["ϕb"][i]                     = components["param_$i"]["slope"]["hyperparameters"]["ϕb"]
         end
 
         if has_AR(ar, i)
@@ -143,6 +143,7 @@ function update_score!(dict_hyperparams_and_fitted_components::Dict{String, Any}
                                                                                 dict_hyperparams_and_fitted_components["params"][3, t - 1, s], 
                                                                                 pred_y[t - 1, s], d, dist_code, param)
     end
+    # println("Score = ", dict_hyperparams_and_fitted_components["score"][param, t, s])
 end
 
 "
@@ -151,7 +152,8 @@ Updates the dict_hyperparams_and_fitted_components with the random walk scenario
 function update_rw!(dict_hyperparams_and_fitted_components::Dict{String, Any}, param::Int64, t::Int64, s::Int64)
 
     dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] = dict_hyperparams_and_fitted_components["rw"]["value"][param, t - 1, s] + 
-                                                                                        dict_hyperparams_and_fitted_components["rw"]["κ"][param] * dict_hyperparams_and_fitted_components["score"][param, t, s] 
+                                                                                        dict_hyperparams_and_fitted_components["rw"]["κ"][param] * dict_hyperparams_and_fitted_components["score"][param, t, s]
+    # println("RW = ", dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s]) 
 end
 
 "
@@ -159,13 +161,13 @@ Updates the dict_hyperparams_and_fitted_components with the random walk and slop
 "
 function update_rws!(dict_hyperparams_and_fitted_components::Dict{String, Any}, param::Int64, t::Int64, s::Int64)
     
-    dict_hyperparams_and_fitted_components["rws"]["b"][param, t, s] = dict_hyperparams_and_fitted_components["rws"]["ϕ"][param]*dict_hyperparams_and_fitted_components["rws"]["b"][param, t - 1, s] + 
+    dict_hyperparams_and_fitted_components["rws"]["b"][param, t, s] = dict_hyperparams_and_fitted_components["rws"]["ϕb"][param]*dict_hyperparams_and_fitted_components["rws"]["b"][param, t - 1, s] + 
                                                                                     dict_hyperparams_and_fitted_components["rws"]["κ_b"][param] * dict_hyperparams_and_fitted_components["score"][param, t, s]
 
     dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] = dict_hyperparams_and_fitted_components["rws"]["value"][param, t - 1, s] + 
                                                                                         dict_hyperparams_and_fitted_components["rws"]["b"][param, t - 1, s] + 
                                                                                         dict_hyperparams_and_fitted_components["rws"]["κ"][param] * dict_hyperparams_and_fitted_components["score"][param, t, s]
-
+    # println("RWS = ", dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s])
 end
 
 "
@@ -190,6 +192,7 @@ function update_S!(dict_hyperparams_and_fitted_components::Dict{String, Any}, nu
         dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s] = sum(dict_hyperparams_and_fitted_components["seasonality"]["γ"][j, param]*cos(2 * π * j * (diff_T + t)/(num_harmonic[param] * 2)) +
                                                                             dict_hyperparams_and_fitted_components["seasonality"]["γ_star"][j, param]*sin(2 * π * j * (diff_T + t)/(num_harmonic[param] * 2)) for j in 1:num_harmonic[param])
     end
+    # println("Sazo = ",dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s])
 end
 
 "
@@ -199,6 +202,7 @@ function update_AR!(dict_hyperparams_and_fitted_components::Dict{String, Any}, o
 
     dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s] = sum(dict_hyperparams_and_fitted_components["ar"]["ϕ"][:, param][p] * dict_hyperparams_and_fitted_components["ar"]["value"][param, t - p, s] for p in order[param]) + 
                                                                                 dict_hyperparams_and_fitted_components["ar"]["κ"][param] * dict_hyperparams_and_fitted_components["score"][param, t, s]
+    # println("AR = ", dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s])
 end
 
 "
@@ -206,23 +210,34 @@ Updates the dict_hyperparams_and_fitted_components with the distribution paramet
 "
 function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any}, param::Int64, t::Int64, s::Int64; combination::String="additive")
 
+    m = dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] +
+        dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] +
+        dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s]
+    # println("m = ", m)
+    # println("sazo = ", dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s])
+    # println("Intercepto = ", dict_hyperparams_and_fitted_components["intercept"][param])
     if combination == "additive"
         # println("Combination $combination")
+        # μ_t = m_t + s_t
+        dict_hyperparams_and_fitted_components["params"][param, t, s] = dict_hyperparams_and_fitted_components["intercept"][param] + m + 
+                                                                        dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s]
+    elseif combination == "multiplicative1"
+        # println("Combination $combination")
+        # μ_t = m_t × s_t
         dict_hyperparams_and_fitted_components["params"][param, t, s] = dict_hyperparams_and_fitted_components["intercept"][param] + 
-                                                                        dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] + 
-                                                                        dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] +
-                                                                        dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s] +
-                                                                        dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s] 
-    else
-        # t<=286 ? println("Combination $combination") : nothing
-        # t<=286 ? println(dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s]) : nothing
+                                                                    (m * dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s])
+    elseif combination == "multiplicative2"
+        # println("Combination $combination")
+        # μ_t = m_t × (1 + s_t)
         dict_hyperparams_and_fitted_components["params"][param, t, s] = dict_hyperparams_and_fitted_components["intercept"][param] + 
-                                                                    (dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] * 
-                                                                    dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] *
-                                                                    dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s] * 
-                                                                    dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s])
-                                                                    
+                                                                        (m * (1 .+ dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s]))
+    else #combination == "multiplicative3"
+        # println("Combination $combination")
+        # μ_t = m_t + (1 + b × m_t) × s_t
+        dict_hyperparams_and_fitted_components["params"][param, t, s] = dict_hyperparams_and_fitted_components["intercept"][param] + 
+                                                                        m + (1 .+ 0.05*m)*dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s]
     end 
+    # println("Param = ",dict_hyperparams_and_fitted_components["params"][param, t, s])
                                                                                 
 end
 
@@ -232,7 +247,7 @@ Updates the dict_hyperparams_and_fitted_components with the distribution paramet
 function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any}, X_forecast::Matrix{Fl}, period_X::Int64, param::Int64, t::Int64, s::Int64;combination::String="additive") where Fl
 
     n_exp = size(X_forecast, 2)
-
+    println("Não é para entrar aqui")
     if combination=="additive"
         dict_hyperparams_and_fitted_components["params"][param, t, s] = dict_hyperparams_and_fitted_components["intercept"][param] + 
                                                                         dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] + 
@@ -312,11 +327,13 @@ function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitt
                 end
                 update_params!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s; combination=combination)
             end
+            # println("Param = ", dict_hyperparams_and_fitted_components["params"][:, T_fitted + t, s])
+            # println("Pred_y = ", sample_dist(dict_hyperparams_and_fitted_components["params"][:, T_fitted + t, s], dist))
             pred_y[T_fitted + t, s] = sample_dist(dict_hyperparams_and_fitted_components["params"][:, T_fitted + t, s], dist)
         end
     end
 
-    return pred_y
+    return pred_y, dict_hyperparams_and_fitted_components
 end
 
 "
@@ -422,12 +439,12 @@ Performs the forecast of the GAS model.
 "
 function predict(gas_model::GASModel, output::Output, y::Vector{Float64}, steps_ahead::Int64, num_scenarios::Int64; probabilistic_intervals::Vector{Float64} = [0.8, 0.95], combination::String="additive")
     
-    dict_hyperparams_and_fitted_components = get_dict_hyperparams_and_fitted_components_with_forecast(gas_model, output, steps_ahead, num_scenarios; combination=combination)
-    pred_y                                 = simulate(gas_model, output, dict_hyperparams_and_fitted_components, y, steps_ahead, num_scenarios; combination=combination)
+    dict_hyperparams_and_fitted_components         = get_dict_hyperparams_and_fitted_components_with_forecast(gas_model, output, steps_ahead, num_scenarios; combination=combination)
+    pred_y, dict_hyperparams_and_fitted_components = simulate(gas_model, output, dict_hyperparams_and_fitted_components, y, steps_ahead, num_scenarios; combination=combination)
 
     dict_forec = get_mean_and_intervals_prediction(pred_y, steps_ahead, probabilistic_intervals)
 
-    return dict_forec
+    return dict_forec, dict_hyperparams_and_fitted_components
 end
 
 "

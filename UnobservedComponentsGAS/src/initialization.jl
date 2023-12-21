@@ -2,8 +2,8 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
 
     #T = length(y)
     has_explanatories = !ismissing(X) ? true : false
-    combination == "additive" ? initial_vector  = zeros(length(y)) : initial_vector  = ones(length(y))
-    combination == "additive" ? initial_γ_value = zeros(1) : initial_γ_value = ones(1)
+    combination in ["additive", "multiplicative2"] ? initial_vector  = zeros(length(y)) : initial_vector  = ones(length(y))
+    combination in ["additive", "multiplicative2"] ? initial_γ_value = zeros(1) : initial_γ_value = ones(1)
 
 
     if has_level || has_slope || has_seasonality
@@ -43,15 +43,15 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
     if has_slope && has_level
         initial_rws   = output.components["level"]["values"]
         initial_slope = output.components["slope"]["values"]
-        initial_rw    = initial_vector#zeros(length(y))
+        initial_rw    = zeros(length(y))
     elseif !has_slope && has_level
         initial_rw = output.components["level"]["values"]
-        initial_rws  = initial_vector#zeros(length(y))
-        initial_slope = initial_vector#zeros(length(y))
+        initial_rws  = zeros(length(y))
+        initial_slope = zeros(length(y))
     elseif !has_slope && !has_level
-        initial_rws  = initial_vector#zeros(length(y))
-        initial_slope = initial_vector#zeros(length(y))
-        initial_rw    = initial_vector#zeros(length(y))
+        initial_rws  = zeros(length(y))
+        initial_slope = zeros(length(y))
+        initial_rw    = zeros(length(y))
     end
 
     if has_seasonality

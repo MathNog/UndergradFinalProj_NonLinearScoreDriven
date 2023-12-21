@@ -5,7 +5,7 @@ Returns a dictionary with the fitted hyperparameters and components.
 "
 function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Matrix{Fl}}) where {Ml,  Fl} 
     
-    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
+    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic, combination = gas_model
 
     idx_params = get_idxs_time_varying_params(time_varying_params)
 
@@ -43,6 +43,10 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
         components["param_$i"] = Dict{String, Any}()
         components["param_$i"]["intercept"] = value(model[:c][i])
 
+        if combination == "multiplicative3"
+            components["param_$i"]["b_mult"] = value(model[:b_mult][i])
+        end
+
         if has_random_walk(random_walk, i)
             components["param_$i"]["level"]                    = Dict{String, Any}()
             components["param_$i"]["level"]["hyperparameters"] = Dict{String, Any}()
@@ -61,7 +65,7 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
             components["param_$i"]["level"]["hyperparameters"]["κ"] = value(model[:κ_RWS][i])
             components["param_$i"]["slope"]["value"]                = Vector(value.(model[:b][:, i]))
             components["param_$i"]["slope"]["hyperparameters"]["κ"] = value(model[:κ_b][i])
-            components["param_$i"]["slope"]["hyperparameters"]["ϕ"] = value(model[:ϕ])
+            components["param_$i"]["slope"]["hyperparameters"]["ϕb"] = value(model[:ϕb])
         end
 
         if has_seasonality(seasonality, i)

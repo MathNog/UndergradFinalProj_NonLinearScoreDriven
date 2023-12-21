@@ -1,6 +1,7 @@
 function update_fitted_params_and_components_dict(gas_model::GASModel, output::Output, new_y::Vector{Fl}, new_X::Union{Missing, Matrix{Float64}};
     initial_values::Union{Dict{String, Any}, Missing} = missing) where {Fl}
 
+    println("Entrooou aquii")
 @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
 
 components    = output.components

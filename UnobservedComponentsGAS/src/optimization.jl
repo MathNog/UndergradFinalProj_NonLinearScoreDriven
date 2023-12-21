@@ -96,39 +96,61 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
     idx_time_varying_params = get_idxs_time_varying_params(time_varying_params) 
 
     @variable(model, c[idx_time_varying_params])
+    @variable(model, b_mult[idx_time_varying_params])
 
     has_explanatory = !ismissing(X) ? true : false
 
     for i in idx_time_varying_params
 
         dynamic_aux = Vector(undef, T)
+        m           = Vector(undef, T)
 
         has_explanatory_param = has_explanatory && i == 1
 
         if combination == "additive"
             println("Combination = $combination")
+            # μ_t = m_t + s_t
             for t in 2:T
+                m[t] = include_component_in_dynamic(model, :RW, has_random_walk(random_walk, i), t, i; combination=combination) +
+                        include_component_in_dynamic(model, :RWS, has_random_walk_slope(random_walk_slope, i), t, i; combination=combination) +
+                        include_component_in_dynamic(model, :AR, has_AR(ar, i), t, i; combination=combination)
                 dynamic_aux[t] = model[:c][i] + 
-                                include_component_in_dynamic(model, :RW, has_random_walk(random_walk, i), t, i; combination=combination) +
-                                include_component_in_dynamic(model, :RWS, has_random_walk_slope(random_walk_slope, i), t, i; combination=combination) +
-                                include_component_in_dynamic(model, :AR, has_AR(ar, i), t, i; combination=combination) +
+                                m[t] + 
                                 include_component_in_dynamic(model, :S, has_seasonality(seasonality, i), t, i; combination=combination) + 
                                 include_explanatories_in_dynamic(model, X, has_explanatory_param, t, i; combination=combination)
 
             end
-        else
+        elseif combination == "multiplicative1"
             println("Combination = $combination")
-            for t in 2:T                
-                # t<=4 ? println("RW ",include_component_in_dynamic(model, :RW, has_random_walk(random_walk, i), t, i; combination=combination)) : nothing
-                # t<=4 ? println("RWS ",include_component_in_dynamic(model, :RWS, has_random_walk_slope(random_walk_slope, i), t, i; combination=combination)) : nothing
-                # # t<=4 ? println("AR ",include_component_in_dynamic(model, :ar, has_AR(ar, i), t, i; combination=combination)) : nothing
-                # t<=4 ? println("S ",include_component_in_dynamic(model, :S, has_seasonality(seasonality, i), t, i; combination=combination)) : nothing
+            # μ_t = m_t × s_t
+            for t in 2:T      
+                m[t] = include_component_in_dynamic(model, :RW, has_random_walk(random_walk, i), t, i; combination=combination) +
+                        include_component_in_dynamic(model, :RWS, has_random_walk_slope(random_walk_slope, i), t, i; combination=combination) +
+                        include_component_in_dynamic(model, :AR, has_AR(ar, i), t, i; combination=combination)   
                 dynamic_aux[t] = model[:c][i] + 
-                                (include_component_in_dynamic(model, :RW, has_random_walk(random_walk, i), t, i; combination=combination) *
-                                include_component_in_dynamic(model, :RWS, has_random_walk_slope(random_walk_slope, i), t, i; combination=combination) *
-                                include_component_in_dynamic(model, :AR, has_AR(ar, i), t, i; combination=combination) *
-                                include_component_in_dynamic(model, :S, has_seasonality(seasonality, i), t, i; combination=combination) * 
-                                include_explanatories_in_dynamic(model, X, has_explanatory_param, t, i; combination=combination))
+                                (m[t] * include_component_in_dynamic(model, :S, has_seasonality(seasonality, i), t, i; combination=combination)) + 
+                                include_explanatories_in_dynamic(model, X, has_explanatory_param, t, i; combination=combination)
+            end
+        elseif combination == "multiplicative2"
+            println("Combination = $combination")
+            # μ_t = m_t × (1 + s_t)
+            for t in 2:T                
+                m[t] = (include_component_in_dynamic(model, :RW, has_random_walk(random_walk, i), t, i; combination=combination) +
+                        include_component_in_dynamic(model, :RWS, has_random_walk_slope(random_walk_slope, i), t, i; combination=combination) +
+                        include_component_in_dynamic(model, :AR, has_AR(ar, i), t, i; combination=combination))
+                dynamic_aux[t] = model[:c][i] + m[t] * (1 .+ include_component_in_dynamic(model, :S, has_seasonality(seasonality, i), t, i; combination=combination)) + 
+                                include_explanatories_in_dynamic(model, X, has_explanatory_param, t, i; combination=combination)
+            end
+        else # combination -- "multiplicative3"
+            println("Combination = $combination")
+            # μ_t = m_t + (1 + b × m_t) × s_t
+            for t in 2:T                
+                m[t] = (include_component_in_dynamic(model, :RW, has_random_walk(random_walk, i), t, i; combination=combination) +
+                        include_component_in_dynamic(model, :RWS, has_random_walk_slope(random_walk_slope, i), t, i; combination=combination) +
+                        include_component_in_dynamic(model, :AR, has_AR(ar, i), t, i; combination=combination))
+                # model[:b_mult][i]
+                dynamic_aux[t] = model[:c][i] + m[t] + (1 .+ 0.01.*m[t]) * include_component_in_dynamic(model, :S, has_seasonality(seasonality, i), t, i; combination=combination) +  
+                                include_explanatories_in_dynamic(model, X, has_explanatory_param, t, i; combination=combination)
             end
         end
         @NLconstraint(model,[t = 2:T], parameters[t, i] ==  dynamic_aux[t])
