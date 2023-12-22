@@ -60,8 +60,11 @@ y_ref = y[1:len_train]
 y_train = y[1:len_train]
 y_test = y[len_train+1:end]
 
+mmin_val = 0.1
+max_val  = 1.1
+
 # y_train = FuncoesTeste.normalize_data(y_train) #airline, carga
-y_train = FuncoesTeste.scale_data(y_train, 1., 2.) #ena
+y_train = FuncoesTeste.scale_data(y_train,min_val, max_val) #ena
 # y_train = FuncoesTeste.scale_data(y_train, 0.1, 1.1) #carga
 
 dates_train = dates[1:len_train]
@@ -69,11 +72,11 @@ dates_test = dates[len_train+1:end]
 
 distribution = "Gamma"
 dist = UnobservedComponentsGAS.GammaDistribution(missing, missing)
-combination = "multiplicative1"
-combinacao = "mult1"
+combination = "multiplicative2"
+combinacao = "mult2"
 
-d   = 0.5
-α   = 0.1
+d   = 1.0
+α   = 0.5
 tol = 0.005
 stochastic = true
 
@@ -122,11 +125,11 @@ residuals = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, fals
 q_residuals   = FuncoesTeste.get_quantile_residuals(fitted_model)
 forecast, dict_hyperparams_and_fitted_components = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious; combination=combination)
 
-fitted_model.fit_in_sample = FuncoesTeste.denormalize_data(fitted_model.fit_in_sample, y_ref)
-y_train                    = FuncoesTeste.denormalize_data(y_train, y_ref)
-# y_test                     = FuncoesTeste.denormalize_data(y_test, y_ref)
-forecast["mean"]           = FuncoesTeste.denormalize_data(forecast["mean"], y_ref)
-forecast["scenarios"]      = FuncoesTeste.denormalize_data(forecast["scenarios"], y_ref)
+# fitted_model.fit_in_sample = FuncoesTeste.denormalize_data(fitted_model.fit_in_sample, y_ref)
+# y_train                    = FuncoesTeste.denormalize_data(y_train, y_ref)
+# # y_test                     = FuncoesTeste.denormalize_data(y_test, y_ref)
+# forecast["mean"]           = FuncoesTeste.denormalize_data(forecast["mean"], y_ref)
+# forecast["scenarios"]      = FuncoesTeste.denormalize_data(forecast["scenarios"], y_ref)
 
 fitted_model.fit_in_sample[1] = y_train[1]
 fitted_model.fit_in_sample .= FuncoesTeste.unscale_data(fitted_model.fit_in_sample, y_ref)
@@ -145,7 +148,7 @@ path_saida = current_path*"\\Saidas\\CombNaoLinear\\$combination\\$(dict_d[d])\\
 
 recover_scale = false
 
-df_hyperparams = DataFrame("d"=>d, "tol"=>tol, "α"=>α, "stochastic"=>stochastic)
+df_hyperparams = DataFrame("d"=>d, "tol"=>tol, "α"=>α, "stochastic"=>stochastic, "min_val"=>min_val, "max_val"=>max_val)
 CSV.write(path_saida*"$(serie)_hyperparams.csv",df_hyperparams)
 
 dict_params = DataFrame(FuncoesTeste.get_parameters(fitted_model))
