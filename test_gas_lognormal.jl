@@ -49,7 +49,7 @@ dict_d = Dict(0.0 => "d_0", 0.5 => "d_05", 1.0 => "d_1")
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "ena"
+serie = "airline"
 y     = log.(dict_series[serie]["values"])
 dates = dict_series[serie]["dates"]
 
@@ -60,8 +60,8 @@ y_train = y[1:len_train]
 y_test  = y[len_train+1:end]
 y_ref   = y[1:len_train]
 
-min_val = 1.
-max_val = 2.
+min_val = 0.5
+max_val = 1.5
 
 # y_train = FuncoesTeste.normalize_data(y_train) #airline, carga
 y_train = FuncoesTeste.scale_data(y_train, min_val, max_val) #ena
@@ -77,7 +77,7 @@ combinacao   = "mult1"
 
 d   = 1.0
 α   = 0.5
-tol = 0.05
+tol = 0.005
 stochastic = true
 
 DICT_MODELS["LogNormal"] = Dict() 
