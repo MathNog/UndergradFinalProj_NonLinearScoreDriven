@@ -49,32 +49,35 @@ dict_d = Dict(0.0 => "d_0", 0.5 => "d_05", 1.0 => "d_1")
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "airline"
-y = log.(dict_series[serie]["values"])
+serie = "ena"
+y     = log.(dict_series[serie]["values"])
 dates = dict_series[serie]["dates"]
 
 steps_ahead = 12
-len_train = length(y) - steps_ahead
+len_train   = length(y) - steps_ahead
 
 y_train = y[1:len_train]
 y_test  = y[len_train+1:end]
 y_ref   = y[1:len_train]
 
-# y_train = FuncoesTeste.normalize_data(y_train) 
-y_train = FuncoesTeste.scale_data(y_train, 1., 2.) 
-# y_train = FuncoesTeste.scale_data(y_train, 0.1, 1.1) 
+min_val = 1.
+max_val = 2.
+
+# y_train = FuncoesTeste.normalize_data(y_train) #airline, carga
+y_train = FuncoesTeste.scale_data(y_train, min_val, max_val) #ena
+# y_train = FuncoesTeste.scale_data(y_train, 0.1, 1.1) #carga
 
 dates_train = dates[1:len_train]
 dates_test  = dates[len_train+1:end]
 
 distribution = "LogNormal"
 dist         = UnobservedComponentsGAS.NormalDistribution(missing, missing)
-combination  = "multiplicative2"
-combinacao   = "mult2"
+combination  = "multiplicative1"
+combinacao   = "mult1"
 
 d   = 1.0
 α   = 0.5
-tol = 0.005
+tol = 0.05
 stochastic = true
 
 DICT_MODELS["LogNormal"] = Dict() 
@@ -117,21 +120,16 @@ residuals     = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, 
 q_residuals   = FuncoesTeste.get_quantile_residuals(fitted_model)
 forecast, dict_hyperparams_and_fitted_components = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious; combination=combination)
 
-fitted_model.fit_in_sample = FuncoesTeste.denormalize_data(fitted_model.fit_in_sample, y_ref)
-y_train                    = FuncoesTeste.denormalize_data(y_train, y_ref)
-forecast["mean"]           = FuncoesTeste.denormalize_data(forecast["mean"], y_ref)
-forecast["scenarios"]      = FuncoesTeste.denormalize_data(forecast["scenarios"], y_ref)
+# fitted_model.fit_in_sample = FuncoesTeste.denormalize_data(fitted_model.fit_in_sample, y_ref)
+# y_train                    = FuncoesTeste.denormalize_data(y_train, y_ref)
+# forecast["mean"]           = FuncoesTeste.denormalize_data(forecast["mean"], y_ref)
+# forecast["scenarios"]      = FuncoesTeste.denormalize_data(forecast["scenarios"], y_ref)
 
-
-# fitted_model.fit_in_sample[1] = y_train[1]
-fitted_model.fit_in_sample .= FuncoesTeste.unscale_data(fitted_model.fit_in_sample, y_ref)
-y_train = FuncoesTeste.unscale_data(y_train, y_ref)
-forecast["mean"] = FuncoesTeste.unscale_data(forecast["mean"], y_ref)
-forecast["scenarios"] = FuncoesTeste.unscale_data(forecast["scenarios"], y_ref)
-
-# Avaliar possiveis mudancas entre fit e forec
-plot(dict_hyperparams_and_fitted_components["ar"]["value"][1,:,:][:,1], title = "AR")
-plot(dict_hyperparams_and_fitted_components["seasonality"]["value"][1,:,:][2:end,1], title = "Sazo")
+fitted_model.fit_in_sample[1] = y_train[1]
+fitted_model.fit_in_sample    .= FuncoesTeste.unscale_data(fitted_model.fit_in_sample, y_ref)
+y_train                       = FuncoesTeste.unscale_data(y_train, y_ref)
+forecast["mean"]              = FuncoesTeste.unscale_data(forecast["mean"], y_ref)
+forecast["scenarios"]         = FuncoesTeste.unscale_data(forecast["scenarios"], y_ref)
 
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 
@@ -142,7 +140,7 @@ recover_scale ? scale="Original" : scale="Log"
 path_saida = current_path*"\\Saidas\\CombNaoLinear\\$combination\\$(dict_d[d])\\$distribution\\"
 # path_saida = current_path*"\\Saidas\\Benchmark\\$distribution\\Original\\"
 
-df_hyperparams = DataFrame("d"=>d, "tol"=>tol, "α"=>α, "stochastic"=>stochastic)
+df_hyperparams = DataFrame("d"=>d, "tol"=>tol, "α"=>α, "stochastic"=>stochastic, "min_val"=>min_val, "max_val"=>max_val)
 CSV.write(path_saida*"$(serie)_hyperparams.csv",df_hyperparams)
 
 dict_params = DataFrame(FuncoesTeste.get_parameters(fitted_model))
