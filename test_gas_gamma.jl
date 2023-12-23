@@ -49,7 +49,7 @@ dict_d = Dict(0.0 => "d_0", 0.5 => "d_05", 1.0 => "d_1")
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "carga"
+serie = "ena"
 y = dict_series[serie]["values"]
 dates = dict_series[serie]["dates"]
 
@@ -60,11 +60,11 @@ y_ref = y[1:len_train]
 y_train = y[1:len_train]
 y_test = y[len_train+1:end]
 
-mmin_val = 0.1
-max_val  = 1.1
+min_val = 1.
+max_val = 2.
 
 # y_train = FuncoesTeste.normalize_data(y_train) #airline, carga
-y_train = FuncoesTeste.scale_data(y_train,min_val, max_val) #ena
+y_train = FuncoesTeste.scale_data(y_train, min_val, max_val) #ena
 # y_train = FuncoesTeste.scale_data(y_train, 0.1, 1.1) #carga
 
 dates_train = dates[1:len_train]
@@ -75,9 +75,9 @@ dist = UnobservedComponentsGAS.GammaDistribution(missing, missing)
 combination = "multiplicative2"
 combinacao = "mult2"
 
-d   = 1.0
+d   = 0.5
 α   = 0.5
-tol = 0.005
+tol = 0.05
 stochastic = true
 
 DICT_MODELS["Gamma"] = Dict() 
