@@ -1,2 +1,2 @@
-d,tol,α,stochastic
-0.0,0.005,0.1,true
+d,tol,α,stochastic,min_val,max_val
+0.0,0.005,0.99,true,1.1,2.1
