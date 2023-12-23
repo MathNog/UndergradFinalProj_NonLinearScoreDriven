@@ -75,9 +75,9 @@ dist = UnobservedComponentsGAS.GammaDistribution(missing, missing)
 combination = "multiplicative2"
 combinacao = "mult2"
 
-d   = 0.5
-α   = 0.5
-tol = 0.05
+d   = 0.0
+α   = 0.9
+tol = 0.005
 stochastic = true
 
 DICT_MODELS["Gamma"] = Dict() 
