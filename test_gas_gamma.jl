@@ -49,48 +49,48 @@ dict_d = Dict(0.0 => "d_0", 0.5 => "d_05", 1.0 => "d_1")
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "ena"
+serie = "carga"
 y = dict_series[serie]["values"]
 dates = dict_series[serie]["dates"]
 
 steps_ahead = 12
-len_train = length(y) - steps_ahead
+len_train   = length(y) - steps_ahead
 
-y_ref = y[1:len_train]
+y_ref   = y[1:len_train]
 y_train = y[1:len_train]
-y_test = y[len_train+1:end]
+y_test  = y[len_train+1:end]
 
-min_val = 1.
-max_val = 10.
+min_val = 0.5
+max_val = 1.5
 
 # y_train = FuncoesTeste.normalize_data(y_train) #airline, carga
 y_train = FuncoesTeste.scale_data(y_train, min_val, max_val) #ena
 # y_train = FuncoesTeste.scale_data(y_train, 0.1, 1.1) #carga
 
 dates_train = dates[1:len_train]
-dates_test = dates[len_train+1:end]
+dates_test  = dates[len_train+1:end]
 
 distribution = "Gamma"
-dist = UnobservedComponentsGAS.GammaDistribution(missing, missing)
-combination = "multiplicative1"
-combinacao = "mult1"
+dist         = UnobservedComponentsGAS.GammaDistribution(missing, missing)
+combination  = "multiplicative1"
+combinacao   = "mult1"
 
-d   = 0.5
-α   = 0.5
+d   = 0.0
+α   = 0.1
 tol = 0.005
 stochastic = true
 
 DICT_MODELS["Gamma"] = Dict() 
 
-DICT_MODELS["Gamma"]["carga"]=UnobservedComponentsGAS.GASModel(dist, [false, true], d, Dict(2=>false),  
+DICT_MODELS["Gamma"]["carga"] = UnobservedComponentsGAS.GASModel(dist, [false, true], d, Dict(2=>false),  
                                                         Dict(2=>true),  Dict(2=>false), 
                                                         Dict(2 => 12), false, stochastic, combination)
 
-DICT_MODELS["Gamma"]["ena"]=UnobservedComponentsGAS.GASModel(dist, [false, true], d, Dict(2=>false), 
+DICT_MODELS["Gamma"]["ena"] = UnobservedComponentsGAS.GASModel(dist, [false, true], d, Dict(2=>false), 
                                                             Dict(2=>false), Dict(2=>1), 
                                                             Dict(2 => 12), false, stochastic, combination)
 
-DICT_MODELS["Gamma"]["airline"]=UnobservedComponentsGAS.GASModel(dist, [false, true], d, Dict(2=>false),  
+DICT_MODELS["Gamma"]["airline"] = UnobservedComponentsGAS.GASModel(dist, [false, true], d, Dict(2=>false),  
                                                             Dict(2=>true),  Dict(2=>false), 
                                                             Dict(2 => 12), false, stochastic, combination)
 
@@ -121,22 +121,20 @@ fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; �
 # α = fitted_model.penalty_factor
 
 std_residuals = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, true)
-residuals = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, false)
+residuals     = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, false)
 q_residuals   = FuncoesTeste.get_quantile_residuals(fitted_model)
 forecast, dict_hyperparams_and_fitted_components = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious; combination=combination)
 
 # fitted_model.fit_in_sample = FuncoesTeste.denormalize_data(fitted_model.fit_in_sample, y_ref)
 # y_train                    = FuncoesTeste.denormalize_data(y_train, y_ref)
-# # y_test                     = FuncoesTeste.denormalize_data(y_test, y_ref)
 # forecast["mean"]           = FuncoesTeste.denormalize_data(forecast["mean"], y_ref)
 # forecast["scenarios"]      = FuncoesTeste.denormalize_data(forecast["scenarios"], y_ref)
 
 fitted_model.fit_in_sample[1] = y_train[1]
-fitted_model.fit_in_sample .= FuncoesTeste.unscale_data(fitted_model.fit_in_sample, y_ref)
-y_train = FuncoesTeste.unscale_data(y_train, y_ref)
-# y_test = FuncoesTeste.unscale_data(y_test, y_ref)
-forecast["mean"] = FuncoesTeste.unscale_data(forecast["mean"], y_ref)
-forecast["scenarios"] = FuncoesTeste.unscale_data(forecast["scenarios"], y_ref)
+fitted_model.fit_in_sample    .= FuncoesTeste.unscale_data(fitted_model.fit_in_sample, y_ref)
+y_train                       = FuncoesTeste.unscale_data(y_train, y_ref)
+forecast["mean"]              = FuncoesTeste.unscale_data(forecast["mean"], y_ref)
+forecast["scenarios"]         = FuncoesTeste.unscale_data(forecast["scenarios"], y_ref)
 
 # Avaliar possiveis mudancas entre fit e forec
 plot(dict_hyperparams_and_fitted_components["ar"]["value"][2,:,:][2:end,1], title = "AR")
