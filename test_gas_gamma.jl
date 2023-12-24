@@ -72,12 +72,12 @@ dates_test  = dates[len_train+1:end]
 
 distribution = "Gamma"
 dist         = UnobservedComponentsGAS.GammaDistribution(missing, missing)
-combination  = "multiplicative1"
-combinacao   = "mult1"
+combination  = "multiplicative2"
+combinacao   = "mult2"
 
-d   = 0.0
-α   = 0.1
-tol = 0.005
+d   = 0.5
+α   = 0.9
+tol = 0.05
 stochastic = true
 
 DICT_MODELS["Gamma"] = Dict() 
