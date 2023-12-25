@@ -1,5 +1,4 @@
-using CSV, DataFrames
-
+using CSV, DataFrames, FileIO
 
 current_path = pwd()
 
@@ -49,3 +48,23 @@ df_mapes = hcat(coluna_comb, coluna_d, coluna_distribuicao, coluna_serie, coluna
 df_mapes = DataFrame(df_mapes,:auto)
 rename!(df_mapes, colunas)
 CSV.write(current_path*"\\Saidas\\Relatorio\\df_mapes.csv", df_mapes)
+
+" Compila Gráficos para o Relatório"
+
+dir2 = current_path*"\\Saidas\\CombNaoLinear\\Multiplicative1\\d_1\\Gamma\\"
+
+img = load(dir2*"airline_forecast_Gamma.png")
+
+for combination in combinacoes
+    for d in ds
+        for distribution in distributions
+            for serie in series
+                dir = current_path*"\\Saidas\\CombNaoLinear\\$combination\\$(dict_d[d])\\$distribution\\"
+
+                if serie*"_fit_in_sample_"*distribution*""
+                end
+
+            end
+        end
+    end
+end
