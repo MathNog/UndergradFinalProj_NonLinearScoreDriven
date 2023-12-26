@@ -1,4 +1,0 @@
-Teste,0.01,pvalor,Rejeicao
-Jarque Bera,0.01,0.846420009684981,Não rejeita H₀
-ARCHLM,0.01,0.032884437199904845,Não rejeita H₀
-Ljung Box,0.01,6.91871955327282e-19,Rejeita H₀
