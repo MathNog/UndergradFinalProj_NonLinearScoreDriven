@@ -28,8 +28,10 @@ multiplicative2,0.5,LogNormal,airline,0.19,30.35
 multiplicative2,0.5,LogNormal,carga,0.01,14.81
 multiplicative2,0.5,Gamma,ena,17.93,19.05
 multiplicative2,0.5,Gamma,airline,2.73,57.44
+multiplicative2,0.5,Gamma,carga,2.63,16.77
 multiplicative2,1.0,LogNormal,ena,10.81,24.27
 multiplicative2,1.0,LogNormal,airline,0.01,29.68
 multiplicative2,1.0,LogNormal,carga,0.05,14.47
 multiplicative2,1.0,Gamma,ena,27.76,137.19
 multiplicative2,1.0,Gamma,airline,4.33,73.79
+multiplicative2,1.0,Gamma,carga,2.6,16.8
