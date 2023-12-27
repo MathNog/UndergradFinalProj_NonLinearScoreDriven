@@ -64,7 +64,7 @@ min_val = 1.5
 max_val = 2.5
 
 # y_train = FuncoesTeste.normalize_data(y_train) #airline, carga
-y_train = FuncoesTeste.scale_data(y_train, min_val, max_val) #ena
+# y_train = FuncoesTeste.scale_data(y_train, min_val, max_val) #ena
 # y_train = FuncoesTeste.scale_data(y_train, 0.1, 1.1) #carga
 
 dates_train = dates[1:len_train]
@@ -72,13 +72,13 @@ dates_test  = dates[len_train+1:end]
 
 distribution = "Gamma"
 dist         = UnobservedComponentsGAS.GammaDistribution(missing, missing)
-combination  = "multiplicative2"
-combinacao   = "mult2"
+combination  = "multiplicative1"
+combinacao   = "mult1"
 
-d   = 1.0
-α   = 0.1
+d   = 0.0
+α   = 0.5
 tol = 0.005
-stochastic = false
+stochastic = true
 
 DICT_MODELS["Gamma"] = Dict() 
 
