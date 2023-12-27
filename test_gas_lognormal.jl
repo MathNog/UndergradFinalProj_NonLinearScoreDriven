@@ -75,7 +75,7 @@ dist         = UnobservedComponentsGAS.NormalDistribution(missing, missing)
 combination  = "multiplicative1"
 combinacao   = "mult1"
 
-d   = 0.0
+d   = 1.0
 α   = 0.5
 tol = 0.005
 stochastic = true
