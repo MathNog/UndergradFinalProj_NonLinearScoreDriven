@@ -78,7 +78,7 @@ combination  = "multiplicative1"
 combinacao   = "mult1"
 
 d   = 1.0
-α   = 0.2
+α   = 0.9
 tol = 5e-5
 stochastic = true
 
