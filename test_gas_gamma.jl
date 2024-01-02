@@ -19,26 +19,27 @@ current_path = pwd()
 path_series = current_path*"\\Dados\\Tratados\\"
 DICT_MODELS = Dict()
 
-ena          = CSV.read(path_series*"ena_limpo.csv",DataFrame)
-carga        = CSV.read(path_series*"carga_limpo.csv", DataFrame)
-carga_marina = CSV.read(path_series*"dados_cris.csv EMT_rural_cativo.csv", DataFrame)
-airline      = CSV.read(path_series*"AirPassengers.csv", DataFrame)
+ena              = CSV.read(path_series*"ena_limpo.csv",DataFrame)
+carga            = CSV.read(path_series*"carga_limpo.csv", DataFrame)
+airline          = CSV.read(path_series*"AirPassengers.csv", DataFrame)
+
+carga_components            = CSV.read(path_series*"components_ets_multiplicativo_carga.csv", DataFrame)[:,2:end]
+ena_components              = CSV.read(path_series*"components_ets_multiplicativo_ena.csv", DataFrame)[:,2:end]
+carga_components_normalized = CSV.read(path_series*"components_ets_multiplicativo_carga_normalizada.csv", DataFrame)[:,2:end]
+ena_components_normalized   = CSV.read(path_series*"components_ets_multiplicativo_ena_normalizada.csv", DataFrame)[:,2:end]
 
 dict_series                 = Dict()
 dict_series["ena"]          = Dict()
 dict_series["carga"]        = Dict()
-dict_series["carga_marina"] = Dict()
 dict_series["airline"]      = Dict()
 
 dict_series["ena"]["values"]   = ena[:,:ENA]
 dict_series["ena"]["dates"]    = ena[:,:Data]
+dict_series["ena"]["components"] = ena_components
+
 dict_series["carga"]["values"] = carga[:,:Carga]
 dict_series["carga"]["dates"]  = carga[:,:Data]
-
-valores = parse.(Float64, replace.(carga_marina[:,:value], ","=>"."))
-
-dict_series["carga_marina"]["values"] = valores
-dict_series["carga_marina"]["dates"] = carga_marina[:, :timestamp]
+dict_series["carga"]["components"] = carga_components
 
 dict_series["airline"]["values"] = airline[:,2] .* 1.0
 dict_series["airline"]["dates"]  = airline[:,:Month]
@@ -52,6 +53,7 @@ include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 serie = "carga"
 y = dict_series[serie]["values"]
 dates = dict_series[serie]["dates"]
+initial_components = dict_series[serie]["components"]
 
 steps_ahead = 12
 len_train   = length(y) - steps_ahead
@@ -60,8 +62,8 @@ y_ref   = y[1:len_train]
 y_train = y[1:len_train]
 y_test  = y[len_train+1:end]
 
-min_val = 1.5
-max_val = 2.5
+# min_val = 1.5
+# max_val = 2.5
 
 # y_train = FuncoesTeste.normalize_data(y_train) #airline, carga
 # y_train = FuncoesTeste.scale_data(y_train, min_val, max_val) #ena
@@ -75,9 +77,9 @@ dist         = UnobservedComponentsGAS.GammaDistribution(missing, missing)
 combination  = "multiplicative1"
 combinacao   = "mult1"
 
-d   = 0.0
+d   = 0.5
 α   = 0.5
-tol = 0.005
+tol = 5e-5
 stochastic = true
 
 DICT_MODELS["Gamma"] = Dict() 
@@ -97,7 +99,11 @@ DICT_MODELS["Gamma"]["airline"] = UnobservedComponentsGAS.GASModel(dist, [false,
 num_scenarious = 500
 
 gas_model = DICT_MODELS[distribution][serie]
-fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, max_optimization_time=240.);
+  
+initial_values = FuncoesTeste.get_initial_values_from_components(y_train, initial_components, stochastic, serie, distribution) 
+
+fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, 
+                                                        max_optimization_time=240., initial_values=initial_values);
 
 # dict_initial = deepcopy(fitted_model.components["param_2"])
 # dict_initial["param_1"] = fitted_model.fitted_params["param_1"][2]
@@ -130,15 +136,15 @@ forecast, dict_hyperparams_and_fitted_components = UnobservedComponentsGAS.predi
 # forecast["mean"]           = FuncoesTeste.denormalize_data(forecast["mean"], y_ref)
 # forecast["scenarios"]      = FuncoesTeste.denormalize_data(forecast["scenarios"], y_ref)
 
-fitted_model.fit_in_sample[1] = y_train[1]
-fitted_model.fit_in_sample    .= FuncoesTeste.unscale_data(fitted_model.fit_in_sample, y_ref)
-y_train                       = FuncoesTeste.unscale_data(y_train, y_ref)
-forecast["mean"]              = FuncoesTeste.unscale_data(forecast["mean"], y_ref)
-forecast["scenarios"]         = FuncoesTeste.unscale_data(forecast["scenarios"], y_ref)
+# fitted_model.fit_in_sample[1] = y_train[1]
+# fitted_model.fit_in_sample    .= FuncoesTeste.unscale_data(fitted_model.fit_in_sample, y_ref)
+# y_train                       = FuncoesTeste.unscale_data(y_train, y_ref)
+# forecast["mean"]              = FuncoesTeste.unscale_data(forecast["mean"], y_ref)
+# forecast["scenarios"]         = FuncoesTeste.unscale_data(forecast["scenarios"], y_ref)
 
-# Avaliar possiveis mudancas entre fit e forec
-plot(dict_hyperparams_and_fitted_components["ar"]["value"][2,:,:][2:end,1], title = "AR")
-plot(dict_hyperparams_and_fitted_components["seasonality"]["value"][2,:,:][2:end,1], title = "Sazo")
+# # Avaliar possiveis mudancas entre fit e forec
+# plot(dict_hyperparams_and_fitted_components["ar"]["value"][2,:,:][2:end,1], title = "AR")
+# plot(dict_hyperparams_and_fitted_components["seasonality"]["value"][2,:,:][2:end,1], title = "Sazo")
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 
 path_saida = current_path*"\\Saidas\\CombNaoLinear\\$combination\\$(dict_d[d])\\$distribution\\"
@@ -146,7 +152,7 @@ path_saida = current_path*"\\Saidas\\CombNaoLinear\\$combination\\$(dict_d[d])\\
 
 recover_scale = false
 
-df_hyperparams = DataFrame("d"=>d, "tol"=>tol, "α"=>α, "stochastic"=>stochastic, "min_val"=>min_val, "max_val"=>max_val)
+df_hyperparams = DataFrame("d"=>d, "tol"=>tol, "α"=>α, "stochastic"=>stochastic)#, "min_val"=>min_val, "max_val"=>max_val)
 CSV.write(path_saida*"$(serie)_hyperparams.csv",df_hyperparams)
 
 dict_params = DataFrame(FuncoesTeste.get_parameters(fitted_model))

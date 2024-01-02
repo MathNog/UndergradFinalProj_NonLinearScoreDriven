@@ -405,7 +405,8 @@ function initialize_components!(model::Ml, initial_values::Dict{String, Any}, ga
     if haskey(initial_values, "fixed_param")
         set_start_value.(model[:fixed_params], round.(initial_values["fixed_param"]; digits = 5))
     end
-    
+    println("Size initial values = ", length(initial_values["rws"]["values"]))
+    println("Size model = ", length(model[:RWS]))
     if sum(values(random_walk_slope)) > 0 
         set_start_value.(model[:RWS], round.(initial_values["rws"]["values"]; digits = 5))
         set_start_value.(model[:κ_RWS], round.(initial_values["rws"]["κ"]; digits = 5))

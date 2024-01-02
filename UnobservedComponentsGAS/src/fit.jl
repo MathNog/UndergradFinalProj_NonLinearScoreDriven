@@ -33,6 +33,9 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, fixed_ν::Union{Missin
     if ismissing(initial_values)
         Random.seed!(123)
         initial_values = create_output_initialization(y, missing, gas_model);
+        # println(keys(initial_values))
+        # println(keys(initial_values["param"]))
+        # println(initial_values["param"])
     end
 
     @info("Including dynamics..")
