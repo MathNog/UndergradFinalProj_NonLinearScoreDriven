@@ -77,8 +77,8 @@ dist         = UnobservedComponentsGAS.GammaDistribution(missing, missing)
 combination  = "multiplicative1"
 combinacao   = "mult1"
 
-d   = 0.5
-α   = 0.5
+d   = 1.0
+α   = 0.2
 tol = 5e-5
 stochastic = true
 
@@ -103,7 +103,7 @@ gas_model = DICT_MODELS[distribution][serie]
 initial_values = FuncoesTeste.get_initial_values_from_components(y_train, initial_components, stochastic, serie, distribution) 
 
 fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, 
-                                                        max_optimization_time=240., initial_values=initial_values);
+                                                        max_optimization_time=300., initial_values=initial_values);
 
 # dict_initial = deepcopy(fitted_model.components["param_2"])
 # dict_initial["param_1"] = fitted_model.fitted_params["param_1"][2]
