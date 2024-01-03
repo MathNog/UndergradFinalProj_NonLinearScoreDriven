@@ -81,11 +81,11 @@ end
 function plot_residuals(residuals, dates, model, std_bool, serie, type, combination, d)
     
     if type == "quantile"
-        plot(title="Residuos Quantílicos $model - $serie - $combination - d = $d")
+        plot(title="Residuos Quantílicos $model - $serie - $combination - d = $d", titlefontsize=12)
         plot!(dates, residuals, label="Resíduos Quantílicos")
     else
         std_bool==true ? std_title = "Padronizados" : std_title = ""
-        plot(title="Resíduos $std_title $model - $serie - $combination - d = $d")
+        plot(title="Resíduos $std_title $model - $serie - $combination - d = $d", titlefontsize=12)
         plot!(dates[2:end], residuals , label="Resíduos")
     end
 end

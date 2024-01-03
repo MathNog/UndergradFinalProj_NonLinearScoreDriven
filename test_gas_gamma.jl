@@ -50,7 +50,7 @@ dict_d = Dict(0.0 => "d_0", 0.5 => "d_05", 1.0 => "d_1")
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "ena"
+serie = "carga"
 y = dict_series[serie]["values"]
 dates = dict_series[serie]["dates"]
 initial_components = dict_series[serie]["components"]
@@ -74,12 +74,12 @@ dates_test  = dates[len_train+1:end]
 
 distribution = "Gamma"
 dist         = UnobservedComponentsGAS.GammaDistribution(missing, missing)
-combination  = "multiplicative2"
-combinacao   = "mult2"
+combination  = "multiplicative1"
+combinacao   = "mult1"
 
 d   = 1.0
 α   = 0.1
-tol = 5e-2
+tol = 5e-5
 stochastic = true
 
 DICT_MODELS["Gamma"] = Dict() 
