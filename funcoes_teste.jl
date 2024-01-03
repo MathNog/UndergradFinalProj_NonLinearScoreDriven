@@ -97,7 +97,7 @@ function plot_acf_residuals(residuals, model, serie, type, combination, d)
     conf_interval = 1.96 / sqrt(length(residuals)-1)  # 95% confidence interval
 
     type == "quantile" ? tipo = "Quantílicos" : tipo = ""
-    plot(title="FAC dos Residuos $tipo $model - $serie - $combination - d = $d", titlefontsize=12)
+    plot(title="FAC dos Residuos $tipo $model - $serie - $combination - d = $d", titlefontsize=11)
     plot!(autocor(residuals[2:end]),seriestype=:stem, label="")
     hline!([conf_interval, -conf_interval], line = (:red, :dash), label = "IC 95%")
 end
@@ -130,9 +130,9 @@ end
 
 function plot_residuals_histogram(residuals, model, serie, type, combination, d)
     if type == "quantile"
-        histogram(residuals[2:end], title="Histograma Residuos Quantílicos $model - $serie - $combination - d = $d", label="", titlefontsize=12)
+        histogram(residuals[2:end], title="Histograma Residuos Quantílicos $model - $serie - $combination - d = $d", label="", titlefontsize=11)
     else
-        histogram(residuals[2:end], title="Histograma Residuos $model - $serie - $combination - d = $d", label="", titlefontsize=12)
+        histogram(residuals[2:end], title="Histograma Residuos $model - $serie - $combination - d = $d", label="", titlefontsize=11)
     end
 end
 
@@ -148,7 +148,7 @@ function plot_fit_in_sample(fitted_model, fit_dates, y_train, model, recover_sca
     # println(fit_in_sample)
     plot(fit_dates[2:end], y_train[2:end], label="Série")
     plot!(fit_dates[2:end], fit_in_sample[1:end], label="Fit in sample")    
-    plot!(title=" Fit in sample GAS-CNO $model - $serie - $combination - d = $d", titlefontsize=12)
+    plot!(title=" Fit in sample GAS-CNO $model - $serie - $combination - d = $d", titlefontsize=11)
     
 end
 
@@ -161,7 +161,7 @@ function plot_forecast(fitted_model, forecast, y_test, forecast_dates, model, re
     else
         forecast_mean = forecast["mean"]
     end
-    p = plot(title = "Forecast GAS-CNO $model - $serie - $combination - d = $d", titlefontsize=12)
+    p = plot(title = "Forecast GAS-CNO $model - $serie - $combination - d = $d", titlefontsize=11)
     p = plot!(forecast_dates, y_test, label="Série")
     p = plot!(forecast_dates, forecast_mean, label="Forecast", color="red")
     display(p)
@@ -216,21 +216,21 @@ function plot_components(fitted_model, estimation_dates, model, param, recover_s
     if "ar" in keys(components)
         p1 = plot(estimation_dates[2:end], ar[2:end], label="AR")
         p3 = plot(estimation_dates[2:end], seasonality[2:end], label="Seasonality")
-        plot(p1, p3, layout = (2,1) ,plot_title = "Componentes GAS-CNO $model - $serie - $combination - d = $d", plot_titlefontsize=12)
+        plot(p1, p3, layout = (2,1) ,plot_title = "Componentes GAS-CNO $model - $serie - $combination - d = $d", plot_titlefontsize=11)
     else
         p1 = plot(estimation_dates[2:end], level[2:end], label="Level")
         p2 = plot(estimation_dates[2:end],slope[2:end], label="Slope")
         p3 = plot(estimation_dates[2:end], seasonality[2:end], label="Seasonality")
-        plot(p1, p2, p3, layout = (3,1) ,plot_title = "Componentes GAS-CNO $model - $serie - $combination - d = $d", plot_titlefontsize=12)
+        plot(p1, p2, p3, layout = (3,1) ,plot_title = "Componentes GAS-CNO $model - $serie - $combination - d = $d", plot_titlefontsize=11)
     end
 end
 
 function plot_qqplot(residuals, model, serie, type, combination, d)
     plot(qqplot(Normal, residuals))
     if type == "quantile"
-        plot!(title="QQPlot Residuos Quantílicos $model - $serie - $combination - d = $d", titlefontsize=12)
+        plot!(title="QQPlot Residuos Quantílicos $model - $serie - $combination - d = $d", titlefontsize=11)
     else
-        plot!(title="QQPlot Residuos $model - $serie - $combination - d = $d", titlefontsize=12)
+        plot!(title="QQPlot Residuos $model - $serie - $combination - d = $d", titlefontsize=11)
     end
 end
 
@@ -501,18 +501,22 @@ function get_initial_values_from_components(y, components, stochastic, serie, di
         initial_seasonality = components[:,"s1"]
     end
 
+    initial_values                          = Dict{String,Any}()
     if dist == "Gamma" 
         initial_params = get_initial_params_gamma(y, [false, true])
+        initial_values["fixed_param"]           = [initial_params[1]]
+        initial_values["param"]                 = initial_params[2]
     else
         initial_params = get_initial_params_normal(y, [true, false])
+        initial_values["fixed_param"]           = [initial_params[2]]
+        initial_values["param"]                 = initial_params[1]
     end
 
     initial_γ, initial_γ_star = fit_harmonics(initial_seasonality, 12, stochastic)
 
-    initial_values                          = Dict{String,Any}()
+   
 
-    initial_values["fixed_param"]           = [initial_params[1]]
-    initial_values["param"]                 = initial_params[2]
+    
 
     initial_values["intercept"]             = Dict()
     initial_values["intercept"]["values"]   = [0.02]
