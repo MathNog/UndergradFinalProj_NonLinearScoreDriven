@@ -74,8 +74,8 @@ dates_test  = dates[len_train+1:end]
 
 distribution = "Gamma"
 dist         = UnobservedComponentsGAS.GammaDistribution(missing, missing)
-combination  = "multiplicative1"
-combinacao   = "mult1"
+combination  = "multiplicative2"
+combinacao   = "mult2"
 
 d   = 1.0
 α   = 0.1

@@ -50,7 +50,7 @@ dict_d = Dict(0.0 => "d_0", 0.5 => "d_05", 1.0 => "d_1")
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "ena"
+serie = "carga"
 y     = log.(dict_series[serie]["values"])
 dates = dict_series[serie]["dates"]
 initial_components = dict_series[serie]["components"]
