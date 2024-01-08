@@ -213,9 +213,7 @@ function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any
     m = dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] +
         dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] +
         dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s]
-    # println("m = ", m)
-    # println("sazo = ", dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s])
-    # println("Intercepto = ", dict_hyperparams_and_fitted_components["intercept"][param])
+    # Colcoar link aqui nesses ifs
     if combination == "additive"
         # println("Combination $combination")
         # μ_t = m_t + s_t
@@ -237,6 +235,9 @@ function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any
         dict_hyperparams_and_fitted_components["params"][param, t, s] = dict_hyperparams_and_fitted_components["intercept"][param] + 
                                                                         m + (1 .+ 0.05*m)*dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s]
     end 
+    
+    dict_hyperparams_and_fitted_components["params"][param, t, s] = exp.(dict_hyperparams_and_fitted_components["params"][param, t, s])
+
     # println("Param = ",dict_hyperparams_and_fitted_components["params"][param, t, s])
                                                                                 
 end

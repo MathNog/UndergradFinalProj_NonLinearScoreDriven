@@ -74,8 +74,8 @@ dates_test  = dates[len_train+1:end]
 
 distribution = "Gamma"
 dist         = UnobservedComponentsGAS.GammaDistribution(missing, missing)
-combination  = "multiplicative2"
-combinacao   = "mult2"
+combination  = "additive"
+combinacao   = "add"
 
 d   = 1.0
 α   = 0.1
@@ -100,10 +100,10 @@ num_scenarious = 500
 
 gas_model = DICT_MODELS[distribution][serie]
   
-initial_values = FuncoesTeste.get_initial_values_from_components(y_train, initial_components, stochastic, serie, distribution) 
+# initial_values = FuncoesTeste.get_initial_values_from_components(y_train, initial_components, stochastic, serie, distribution) 
 
 fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, 
-                                                        max_optimization_time=300., initial_values=initial_values);
+                                                        max_optimization_time=300.);#, initial_values=initial_values);
 
 # dict_initial = deepcopy(fitted_model.components["param_2"])
 # dict_initial["param_1"] = fitted_model.fitted_params["param_1"][2]
@@ -147,7 +147,7 @@ forecast, dict_hyperparams_and_fitted_components = UnobservedComponentsGAS.predi
 # plot(dict_hyperparams_and_fitted_components["seasonality"]["value"][2,:,:][2:end,1], title = "Sazo")
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 
-path_saida = current_path*"\\Saidas\\CombNaoLinear\\ETS_init\\$combination\\$(dict_d[d])\\$distribution\\"
+path_saida = current_path*"\\Saidas\\CombNaoLinear\\LinkFunction\\$combination\\$(dict_d[d])\\$distribution\\"
 # path_saida = current_path*"\\Saidas\\Benchmark\\$distribution\\"
 
 recover_scale = false
