@@ -93,7 +93,7 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
 
     @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic, combination = gas_model
 
-    # register(model, :exp, 1, exp; autodiff = true)
+    # register(model, :exp, 1, exp; autodiff = true)    
     
     idx_time_varying_params = get_idxs_time_varying_params(time_varying_params) 
 
@@ -160,7 +160,13 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
             end
         end
         
-        @NLconstraint(model,[t = 2:T], parameters[t, i] ==  exp(dynamic_aux[t])) #colocar link aqui
+        if typeof(dist) == UnobservedComponentsGAS.GammaDistribution
+            println("Colocando funcao de ligação log/exp")
+            @NLconstraint(model,[t = 2:T], parameters[t, i] ==  exp(dynamic_aux[t]))
+        else
+            println("Colocando funcao de ligação identidade")
+            @NLconstraint(model,[t = 2:T], parameters[t, i] ==  dynamic_aux[t])
+        end
     end
 
 end

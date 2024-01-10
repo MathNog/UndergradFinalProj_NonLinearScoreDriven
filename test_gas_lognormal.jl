@@ -78,8 +78,8 @@ combination  = "multiplicative2"
 combinacao   = "mult2"
 
 d   = 1.0
-α   = 0.0
-tol = 5e-3
+α   = 0.9
+tol = 5e-5
 stochastic = true
 
 DICT_MODELS["LogNormal"] = Dict() 
@@ -100,10 +100,10 @@ num_scenarious = 500
 
 gas_model = DICT_MODELS[distribution][serie]
 
-initial_values = FuncoesTeste.get_initial_values_from_components(y_train, initial_components, stochastic, serie, distribution) 
+# initial_values = FuncoesTeste.get_initial_values_from_components(y_train, initial_components, stochastic, serie, distribution) 
 
 fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, 
-                                                        max_optimization_time=300., initial_values=initial_values);
+                                                        max_optimization_time=300.);#, initial_values=initial_values);
 
 
 # dict_initial = deepcopy(fitted_model.components["param_1"])
@@ -151,7 +151,7 @@ recover_scale = true
 
 recover_scale ? scale="Original" : scale="Log"
 
-path_saida = current_path*"\\Saidas\\CombNaoLinear\\ETS_init\\$combination\\$(dict_d[d])\\$distribution\\"
+path_saida = current_path*"\\Saidas\\CombNaoLinear\\LinkFunction\\$combination\\$(dict_d[d])\\$distribution\\"
 # path_saida = current_path*"\\Saidas\\Benchmark\\$distribution\\Original\\"
 
 df_hyperparams = DataFrame("d"=>d, "tol"=>tol, "α"=>α, "stochastic"=>stochastic)#, "min_val"=>min_val, "max_val"=>max_val)
