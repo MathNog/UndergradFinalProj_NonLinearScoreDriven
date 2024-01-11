@@ -170,6 +170,11 @@ function fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{G
     @info("Optimizing the model...")
     optimize!(model)
     @info termination_status(model)
+    
+    valores = JuMP.values.(model)
+    # obj_f = JuMP.objective.(model)
+    println(valores)
+    # println(obj_f)
 
     return create_output_fit(model, parameters, y, missing, missing, gas_model, α)
 end
@@ -1076,6 +1081,6 @@ function create_output_fit(model::Ml, parameters::Matrix{Gl} ,y::Vector{Fl}, X::
 
     residuals = get_residuals(y, fit_in_sample, fitted_params, dist_code)
 
-    return Output(fit_in_sample, fitted_params, components, selected_variables, residuals, information_criteria, penalty_factor, String(Symbol(termination_status(model))))
+    return Output(fit_in_sample, fitted_params, components, selected_variables, residuals, information_criteria, penalty_factor, String(Symbol(termination_status(model))), model)
 
 end

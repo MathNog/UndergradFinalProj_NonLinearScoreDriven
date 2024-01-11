@@ -50,7 +50,7 @@ dict_d = Dict(0.0 => "d_0", 0.5 => "d_05", 1.0 => "d_1")
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "carga"
+serie = "ena"
 y = dict_series[serie]["values"][10:end]
 dates = dict_series[serie]["dates"][10:end]
 initial_components = dict_series[serie]["components"]
@@ -64,7 +64,7 @@ y_test  = y[len_train+1:end]
 
 # min_val = 1000.0
 # max_val = 3000.0
-scale_factor = 100
+scale_factor = 1000
 
 # y_train = FuncoesTeste.normalize_data(y_train) #airline, carga
 # y_train = FuncoesTeste.scale_data(y_train, min_val, max_val) #ena
@@ -76,8 +76,8 @@ dates_test  = dates[len_train+1:end]
 
 distribution = "Gamma"
 dist         = UnobservedComponentsGAS.GammaDistribution(missing, missing)
-combination  = "multiplicative2"
-combinacao   = "mult2"
+combination  = "additive"
+combinacao   = "add"
 
 d   = 1.0
 α   = 0.1
@@ -113,6 +113,8 @@ fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; �
 # gas_model = auto_model[2]
 # d = gas_model.d
 # α = fitted_model.penalty_factor
+
+
 
 std_residuals = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, true)
 residuals     = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, false)

@@ -80,4 +80,5 @@ mutable struct Output
     information_criteria::Dict{String, Float64}
     penalty_factor::Float64
     model_status::String
+    model::Any
 end 
