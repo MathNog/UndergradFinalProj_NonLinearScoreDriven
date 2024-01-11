@@ -50,9 +50,9 @@ dict_d = Dict(0.0 => "d_0", 0.5 => "d_05", 1.0 => "d_1")
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "carga"
-y = dict_series[serie]["values"]
-dates = dict_series[serie]["dates"]
+serie = "ena"
+y = dict_series[serie]["values"][10:end]
+dates = dict_series[serie]["dates"][10:end]
 initial_components = dict_series[serie]["components"]
 
 steps_ahead = 12
@@ -62,12 +62,14 @@ y_ref   = y[1:len_train]
 y_train = y[1:len_train]
 y_test  = y[len_train+1:end]
 
-# min_val = 1.5
-# max_val = 2.5
+# min_val = 1000.0
+# max_val = 3000.0
+scale_factor = 1000
 
 # y_train = FuncoesTeste.normalize_data(y_train) #airline, carga
 # y_train = FuncoesTeste.scale_data(y_train, min_val, max_val) #ena
 # y_train = FuncoesTeste.scale_data(y_train, 0.1, 1.1) #carga
+y_train = y_train./scale_factor
 
 dates_train = dates[1:len_train]
 dates_test  = dates[len_train+1:end]
@@ -78,7 +80,7 @@ combination  = "additive"
 combinacao   = "add"
 
 d   = 1.0
-α   = 0.1
+α   = 0.0
 tol = 5e-5
 stochastic = true
 
@@ -105,20 +107,6 @@ gas_model = DICT_MODELS[distribution][serie]
 fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, 
                                                         max_optimization_time=300.);#, initial_values=initial_values);
 
-# dict_initial = deepcopy(fitted_model.components["param_2"])
-# dict_initial["param_1"] = fitted_model.fitted_params["param_1"][2]
-# dict_initial["param_2"] = fitted_model.fitted_params["param_2"][2]
-
-# open("fitted_gamma_ar_sazo_$(combination).json", "w") do f
-#     JSON3.write(f, dict_initial)
-#     println(f)
-# end
-
-# fitted_model.fitted_params["param_1"]
-
-# plot(initial_values["rws"]["values"].+initial_values["slope"]["values"].+initial_values["seasonality"]["values"])
-# plot!(y_train)
-
 # gas_model = DICT_MODELS[distribution][serie]
 # auto_model = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
 # fitted_model = auto_model[1]
@@ -142,6 +130,12 @@ forecast, dict_hyperparams_and_fitted_components = UnobservedComponentsGAS.predi
 # forecast["mean"]              = FuncoesTeste.unscale_data(forecast["mean"], y_ref)
 # forecast["scenarios"]         = FuncoesTeste.unscale_data(forecast["scenarios"], y_ref)
 
+fitted_model.fit_in_sample[1] = y_train[1]
+fitted_model.fit_in_sample  .*= scale_factor 
+y_train                      *= scale_factor 
+forecast["mean"]             *= scale_factor
+forecast["scenarios"]        *= scale_factor
+
 # # Avaliar possiveis mudancas entre fit e forec
 # plot(dict_hyperparams_and_fitted_components["ar"]["value"][2,:,:][2:end,1], title = "AR")
 # plot(dict_hyperparams_and_fitted_components["seasonality"]["value"][2,:,:][2:end,1], title = "Sazo")
@@ -152,7 +146,7 @@ path_saida = current_path*"\\Saidas\\CombNaoLinear\\LinkFunction\\$combination\\
 
 recover_scale = false
 
-df_hyperparams = DataFrame("d"=>d, "tol"=>tol, "α"=>α, "stochastic"=>stochastic)#, "min_val"=>min_val, "max_val"=>max_val)
+df_hyperparams = DataFrame("d"=>d, "tol"=>tol, "α"=>α, "stochastic"=>stochastic, "scale_factor"=>scale_factor)#, "min_val"=>min_val, "max_val"=>max_val)
 CSV.write(path_saida*"$(serie)_hyperparams.csv",df_hyperparams)
 
 dict_params = DataFrame(FuncoesTeste.get_parameters(fitted_model))

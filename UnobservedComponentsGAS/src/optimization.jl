@@ -135,7 +135,7 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
                                 include_explanatories_in_dynamic(model, X, has_explanatory_param, t, i; combination=combination)
                 # dynamic_aux[t] = exp(dynamic_aux[t])
             end
-        elseif combination == "multiplicative2"
+        else# combination == "multiplicative2"
             println("Combination = $combination")
             # μ_t = m_t × (1 + s_t)
             for t in 2:T                
@@ -143,18 +143,6 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
                         include_component_in_dynamic(model, :RWS, has_random_walk_slope(random_walk_slope, i), t, i; combination=combination) +
                         include_component_in_dynamic(model, :AR, has_AR(ar, i), t, i; combination=combination))
                 dynamic_aux[t] = model[:c][i] + m[t] * (1 .+ include_component_in_dynamic(model, :S, has_seasonality(seasonality, i), t, i; combination=combination)) + 
-                                include_explanatories_in_dynamic(model, X, has_explanatory_param, t, i; combination=combination)
-                # dynamic_aux[t] = exp(dynamic_aux[t])
-            end
-        else # combination -- "multiplicative3"
-            println("Combination = $combination")
-            # μ_t = m_t + (1 + b × m_t) × s_t
-            for t in 2:T                
-                m[t] = (include_component_in_dynamic(model, :RW, has_random_walk(random_walk, i), t, i; combination=combination) +
-                        include_component_in_dynamic(model, :RWS, has_random_walk_slope(random_walk_slope, i), t, i; combination=combination) +
-                        include_component_in_dynamic(model, :AR, has_AR(ar, i), t, i; combination=combination))
-                # model[:b_mult][i]
-                dynamic_aux[t] = model[:c][i] + m[t] + (1 .+ 0.01.*m[t]) * include_component_in_dynamic(model, :S, has_seasonality(seasonality, i), t, i; combination=combination) +  
                                 include_explanatories_in_dynamic(model, X, has_explanatory_param, t, i; combination=combination)
                 # dynamic_aux[t] = exp(dynamic_aux[t])
             end

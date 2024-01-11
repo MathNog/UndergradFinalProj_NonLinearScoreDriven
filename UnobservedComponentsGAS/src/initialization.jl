@@ -1,20 +1,21 @@
-function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missing}, has_level::Bool, has_slope::Bool, has_seasonality::Bool, seasonal_period::Union{Missing, Int64}, stochastic::Bool, order::Vector{Int64}, max_order::Int64; combination::String="additive")
+function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missing}, has_level::Bool, has_slope::Bool, has_seasonality::Bool, seasonal_period::Union{Missing, Int64}, stochastic::Bool, order::Vector{Int64}, max_order::Int64, dist::ScoreDrivenDistribution; combination::String="additive")
 
     #T = length(y)
     has_explanatories = !ismissing(X) ? true : false
     combination in ["additive", "multiplicative2"] ? initial_vector  = zeros(length(y)) : initial_vector  = ones(length(y))
     combination in ["additive", "multiplicative2"] ? initial_γ_value = zeros(1) : initial_γ_value = ones(1)
 
+    typeof(dist) == UnobservedComponentsGAS.GammaDistribution ? y_link = deepcopy(log.(y)) : y_link = deepcopy(y)
 
     if has_level || has_slope || has_seasonality
         if has_explanatories
-            output = NonParametricStructuralModels.fit_model(y, X; level = has_level, slope = has_slope, seasonality = has_seasonality, s = seasonal_period, outlier = false)
+            output = NonParametricStructuralModels.fit_model(y_link, X; level = has_level, slope = has_slope, seasonality = has_seasonality, s = seasonal_period, outlier = false)
         else
-            output = NonParametricStructuralModels.fit_model(y; level = has_level, slope = has_slope, seasonality = has_seasonality, s = seasonal_period, outlier = false)
+            output = NonParametricStructuralModels.fit_model(y_link; level = has_level, slope = has_slope, seasonality = has_seasonality, s = seasonal_period, outlier = false)
         end
 
         if order != [0]
-            res = y .- output.fit
+            res = y_link .- output.fit
             fit_ar_model, ar_coefs, ar_intercept = fit_AR_model(res, order)
 
             initial_ar = fit_ar_model
@@ -29,7 +30,7 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
 
         initial_intercept = output.coefs[1]
     else
-        fit_ar_model, ar_coefs, ar_intercept = fit_AR_model(y, order)
+        fit_ar_model, ar_coefs, ar_intercept = fit_AR_model(y_link, order)
 
         initial_ar = fit_ar_model
             initial_ϕ  = zeros(max_order)
@@ -138,6 +139,9 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
 
     @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic, combination = gas_model
 
+    # typeof(dist) == UnobservedComponentsGAS.GammaDistribution ? y_link = deepcopy(y) : y_link = deepcopy(y)
+    y_link = deepcopy(y)
+
     dist_code               = get_dist_code(dist)
     num_params              = get_num_params(dist)
     idx_time_varying_params = get_idxs_time_varying_params(time_varying_params)
@@ -146,7 +150,7 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
     order                   = get_AR_order(ar)
     max_order               = maximum(vcat(order...))
 
-    initial_params = get_initial_params(y, time_varying_params, dist, seasonality)
+    initial_params = get_initial_params(y_link, time_varying_params, dist, seasonality)
 
     initial_values = Vector{Any}(undef, maximum(idx_time_varying_params))
 
@@ -191,7 +195,7 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
         X_aux =  i == 1 && !ismissing(X) ? X : missing
         
 
-        initial_values[i] = get_initial_values(initial_params[i], X_aux, has_level[i], has_slope[i], has_seasonal[i], seasonal_period[i], stochastic, order[i], max_order; combination=combination)
+        initial_values[i] = get_initial_values(initial_params[i], X_aux, has_level[i], has_slope[i], has_seasonal[i], seasonal_period[i], stochastic, order[i], max_order, dist; combination=combination)
         
         # initialize the mean parameter as the sum of the initial values of the components
         initial_params[i] = zeros(T)
