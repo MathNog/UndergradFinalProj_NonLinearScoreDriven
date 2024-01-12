@@ -85,7 +85,7 @@ write.csv(modelo$states[1:len_train,], file="C:\\Users\\matno\\OneDrive\\Documen
 
 ena = read.csv("C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\ena_limpo.csv")
 
-y = ena$ENA
+y = log(ena$ENA)
 datas = ena$Data
 
 len_test = 12
