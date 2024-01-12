@@ -24,9 +24,13 @@ carga            = CSV.read(path_series*"carga_limpo.csv", DataFrame)
 airline          = CSV.read(path_series*"AirPassengers.csv", DataFrame)
 
 carga_components            = CSV.read(path_series*"components_ets_multiplicativo_carga.csv", DataFrame)[:,2:end]
-ena_components              = CSV.read(path_series*"components_ets_multiplicativo_ena.csv", DataFrame)[:,2:end]
+ena_components              = CSV.read(path_series*"components_ets_multiplicativo_ena.csv", DataFrame)[2:end,2:end]
 carga_components_normalized = CSV.read(path_series*"components_ets_multiplicativo_carga_normalizada.csv", DataFrame)[:,2:end]
 ena_components_normalized   = CSV.read(path_series*"components_ets_multiplicativo_ena_normalizada.csv", DataFrame)[:,2:end]
+
+ena_components_10   = CSV.read(path_series*"components_ets_multiplicativo_ena_10.csv", DataFrame)[2:end,2:end]
+ena_components_100  = CSV.read(path_series*"components_ets_multiplicativo_ena_100.csv", DataFrame)[2:end,2:end]
+ena_components_1000 = CSV.read(path_series*"components_ets_multiplicativo_ena_1000.csv", DataFrame)[2:end,2:end]
 
 dict_series                 = Dict()
 dict_series["ena"]          = Dict()
@@ -35,7 +39,7 @@ dict_series["airline"]      = Dict()
 
 dict_series["ena"]["values"]   = ena[:,:ENA]
 dict_series["ena"]["dates"]    = ena[:,:Data]
-dict_series["ena"]["components"] = ena_components
+dict_series["ena"]["components"] = ena_components_1000
 
 dict_series["carga"]["values"] = carga[:,:Carga]
 dict_series["carga"]["dates"]  = carga[:,:Data]
@@ -51,8 +55,8 @@ dict_d = Dict(0.0 => "d_0", 0.5 => "d_05", 1.0 => "d_1")
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
 serie = "ena"
-y = dict_series[serie]["values"][10:end]
-dates = dict_series[serie]["dates"][10:end]
+y                  = dict_series[serie]["values"][10:end]
+dates              = dict_series[serie]["dates"][10:end]
 initial_components = dict_series[serie]["components"]
 
 steps_ahead = 12
@@ -76,12 +80,12 @@ dates_test  = dates[len_train+1:end]
 
 distribution = "Gamma"
 dist         = UnobservedComponentsGAS.GammaDistribution(missing, missing)
-combination  = "additive"
-combinacao   = "add"
+combination  = "multiplicative2"
+combinacao   = "mult2"
 
 d   = 1.0
-α   = 0.1
-tol = 5e-3
+α   = 0.5
+tol = 5e-2
 stochastic = true
 
 DICT_MODELS["Gamma"] = Dict() 
@@ -102,10 +106,10 @@ num_scenarious = 500
 
 gas_model = DICT_MODELS[distribution][serie]
   
-# initial_values = FuncoesTeste.get_initial_values_from_components(y_train, initial_components, stochastic, serie, distribution) 
+initial_values = FuncoesTeste.get_initial_values_from_components(y_train, initial_components, stochastic, serie, distribution) 
 
 fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, 
-                                                        max_optimization_time=300.);#, initial_values=initial_values);
+                                                        max_optimization_time=300., initial_values=initial_values);
 
 # gas_model = DICT_MODELS[distribution][serie]
 # auto_model = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
@@ -113,8 +117,6 @@ fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; �
 # gas_model = auto_model[2]
 # d = gas_model.d
 # α = fitted_model.penalty_factor
-
-
 
 std_residuals = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, true)
 residuals     = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, false)
