@@ -37,27 +37,31 @@ function score_gama(α, λ, y)
     α <= 0 ? α = 1e-2 : nothing
     λ <= 0 ? λ = 1e-4 : nothing
 
-    ∇_α =  log(y) - y/λ + log(α) - Ψ1(α) - log(λ) + 1
-    ∇_λ = (α/λ)*((y/λ)-1)
-    # println("----------- Score Gamma -------------")
-    # println(∇_α, ∇_λ)
-    return [∇_α; ∇_λ]
+    # ∇_α =  log(y) - y/λ + log(α) - Ψ1(α) - log(λ) + 1
+    # ∇_λ = (α/λ)*((y/λ)-1)
+
+    ∇_α_exp = α * (log(y) - y/λ + log(α) - Ψ1(α) - log(λ) + 1)
+    ∇_λ_exp = α * (y/λ - 1)
+    
+    return [∇_α_exp; ∇_λ_exp]
 end
 
 "
 Evaluate the fisher information of a Normal distribution with mean μ and variance σ².
+Colocar link aqui
 "
 function fisher_information_gama(α, λ) 
 
     α <= 0 ? α = 1e-2 : nothing
     λ <= 0 ? λ = 1e-4 : nothing
     
-    I_λ = α/(λ^2)
-    I_α = Ψ2(α) - 1/α
+    # I_λ = α/(λ^2)
+    # I_α = Ψ2(α) - 1/α
 
-    # println("--------------Fisher Gamma --------------")
-    # println(I_α, I_λ)
-    return [I_α 0; 0 I_λ]
+    I_α_exp = α^2 * (Ψ2(α) - 1/α)
+    I_λ_exp = α
+
+    return [I_α_exp 0; 0 I_λ_exp]
 end
 
 
@@ -105,7 +109,7 @@ path_dados = current_path*"/Dados/SeriesArtificiais/"
 T = 200
 # combination = "additive"
 combination = "multiplicative1"
-# combination = "multiplicative2"
+combination = "multiplicative2"
 
 if combination == "additive"
     dict_inicial_lognormal_ar  = JSON3.read(path_dados*"fitted_lognormal_ar_sazo.json")
@@ -296,6 +300,7 @@ for j in 1:5
 end
 
 " ---------------------- Gamma RWS com Sazo---------------------------------"
+
 path_saida = current_path*"\\Saidas\\SeriesArtificiais\\$combination\\"
 
 for j in 1:5
@@ -310,21 +315,23 @@ for j in 1:5
     S      = Vector{Float64}(undef, T+1)
     y      = Vector{Float64}(undef, T)
 
-    ϕb    = 1#dict_inicial_gamma_rws[:slope][:hyperparameters][:ϕb]
-    c     = dict_inicial_gamma_rws[:intercept]
-    κ_RWS = dict_inicial_gamma_rws[:level][:hyperparameters][:κ]
-    κ_b   = dict_inicial_gamma_rws[:slope][:hyperparameters][:κ]
-    κ_S   = dict_inicial_gamma_rws[:seasonality][:hyperparameters][:κ] ./ 1e6
+    ϕb    = 0.9#dict_inicial_gamma_rws[:slope][:hyperparameters][:ϕb]
+    c     = dict_inicial_gamma_rws[:intercept][:values][1]
+    κ_RWS = dict_inicial_gamma_rws[:rws][:κ]
+    κ_b   = dict_inicial_gamma_rws[:slope][:κ]
+    κ_S   = dict_inicial_gamma_rws[:seasonality][:κ] 
 
-    γ[1]      = dict_inicial_gamma_rws[:seasonality][:hyperparameters][:γ][7:12] 
-    γ_star[1] = dict_inicial_gamma_rws[:seasonality][:hyperparameters][:γ_star][7:12] 
-    S[1]      = dict_inicial_gamma_rws[:seasonality][:value][2] 
-    RWS[1]    = dict_inicial_gamma_rws[:level][:value][2] 
-    b[1]      = dict_inicial_gamma_rws[:slope][:value][2] 
-    α[1]      = dict_inicial_gamma_rws[:param_1] 
-    λ[1]      = dict_inicial_gamma_rws[:param_2] 
+    γ[1]      = dict_inicial_gamma_rws[:seasonality][:γ][1] 
+    γ_star[1] = dict_inicial_gamma_rws[:seasonality][:γ_star][1] 
+    S[1]      = dict_inicial_gamma_rws[:seasonality][:values][1] 
+    RWS[1]    = dict_inicial_gamma_rws[:rws][:values][2] 
+    b[1]      = dict_inicial_gamma_rws[:slope][:values][2] 
+    α[1]      = dict_inicial_gamma_rws[:fixed_param][1]
+    λ[1]      = exp.(dict_inicial_gamma_rws[:param][1][1])
 
-    d = 0.0
+    d = 1.0
+    num_harmonics   = 6
+    seasonal_period = 12
     
     for t in 1:T
         @info "t = $t"
@@ -344,14 +351,11 @@ for j in 1:5
         S[t+1] = sum(γ[t+1])
 
         if combination == "additive"
-            λ[t+1] = c + (RWS[t+1] + S[t+1])
+            λ[t+1] = exp.(c + (RWS[t+1] + S[t+1]))
         elseif combination == "multiplicative1"
-            λ[t+1] = c + (RWS[t+1] * S[t+1])
+            λ[t+1] = exp.(c + (RWS[t+1] * S[t+1]))
         else
-            λ[t+1] = c + RWS[t+1] * (1+ S[t+1])
-        end
-        if λ[t+1] <= 0 
-            λ[t+1] = 1e-4
+            λ[t+1] = exp.(c + RWS[t+1] * (1+ S[t+1]))
         end
         α[t+1] = α[t]
 
@@ -365,13 +369,6 @@ for j in 1:5
     elseif combination == "multiplicative2"
         title = "Série $j - RWS × (1 + Sazo) - Gamma"
     end
-
-    plot(RWS .* S)
-    colunas = DataFrame(zeros(T+1,3),:auto)
-    rename!(colunas,["RWS","S","RWS * S"])
-    colunas[:,1] = RWS
-    colunas[:,2] = S
-    colunas[:,3]= RWS .* S
 
     p1 = plot(y,label="")
     p2 = plot_ACF(diff(y))
@@ -399,42 +396,45 @@ for j in 1:5
     S      = Vector{Float64}(undef, T+1)
     y      = Vector{Float64}(undef, T)
 
-    c    = dict_inicial_gamma_ar[:intercept]
-    ϕ    = dict_inicial_gamma_ar[:ar][:hyperparameters][:ϕ][1]
-    κ_AR = dict_inicial_gamma_ar[:ar][:hyperparameters][:κ]
-    κ_S  = dict_inicial_gamma_ar[:seasonality][:hyperparameters][:κ]
-    d    = 0.
+    c    = dict_inicial_gamma_ar[:intercept][:values][1]
+    ϕ    = 0.9#dict_inicial_gamma_ar[:ar][:ϕ][1]
+    κ_AR = dict_inicial_gamma_ar[:ar][:κ]
+    κ_S  = dict_inicial_gamma_ar[:seasonality][:κ]
+    d    = 1.
 
-    AR[1]     = dict_inicial_gamma_ar[:ar][:value][2]
-    γ[1]      = dict_inicial_gamma_ar[:seasonality][:hyperparameters][:γ][7:12]
-    γ_star[1] = dict_inicial_gamma_ar[:seasonality][:hyperparameters][:γ_star][7:12]
-    S[1]      = dict_inicial_gamma_ar[:seasonality][:value][2]
-    λ[1]      = dict_inicial_gamma_ar[:param_2]
-    α[1]      = dict_inicial_gamma_ar[:param_1]
+    AR[1]     = dict_inicial_gamma_ar[:ar][:values][2]
+    γ[1]      = dict_inicial_gamma_ar[:seasonality][:γ][1]
+    γ_star[1] = dict_inicial_gamma_ar[:seasonality][:γ_star][1]
+    S[1]      = dict_inicial_gamma_ar[:seasonality][:values][2]
+    λ[1]      = exp(dict_inicial_gamma_ar[:param][1])
+    α[1]      = dict_inicial_gamma_ar[:fixed_param][1]
 
     for t in 1:T
         @info "t = $t"
-    # Sorteia um y com os parametros correntes
-    y[t] = rand(Gamma(α[t],λ[t]/α[t]))
-    #Atualiza o score com o novo y
-    s = scaled_score("Gamma", α[t], λ[t], y[t], d)
-    # Atualiza os parametros a partir da dinamica
-    AR[t+1] = ϕ*AR[t] + κ_AR*s
+        # Sorteia um y com os parametros correntes
+        y[t] = rand(Gamma(α[t],λ[t]/α[t]))
+        #Atualiza o score com o novo y
+        s = scaled_score("Gamma", α[t], λ[t], y[t], d)
+        # Atualiza os parametros a partir da dinamica
+        AR[t+1] = ϕ*AR[t] + κ_AR*s
 
-    for i in 1:num_harmonics
-        γ[t+1][i]      = γ[t][i] * cos(2*π*i / seasonal_period) + γ_star[t][i] * sin(2*π*i / seasonal_period) + κ_S*s
-        γ_star[t+1][i] = -γ[t][i] * sin(2*π*i / seasonal_period) + γ_star[t][i] * cos(2*π*i / seasonal_period) + κ_S*s
-    end
+        for i in 1:num_harmonics
+            γ[t+1][i]      = γ[t][i] * cos(2*π*i / seasonal_period) + γ_star[t][i] * sin(2*π*i / seasonal_period) + κ_S*s
+            γ_star[t+1][i] = -γ[t][i] * sin(2*π*i / seasonal_period) + γ_star[t][i] * cos(2*π*i / seasonal_period) + κ_S*s
+        end
 
-    S[t+1] = sum(γ[t+1])
+        S[t+1] = sum(γ[t+1])
 
-    λ[t+1] = c + AR[t+1] + S[t+1]
-    if λ[t+1] <= 0 
-        λ[t+1] = 1e-4
-    end
-    α[t+1] = α[t]
+        if combination == "additive"
+            λ[t+1] = exp(c + AR[t+1] + S[t+1])
+        elseif combination == "multiplicative1"
+            λ[t+1] = exp(c + (AR[t+1] * S[t+1]))
+        else
+            λ[t+1] = exp.(c + AR[t+1] * (1+ S[t+1]))
+        end
+        α[t+1] = α[t]
 
-    println("    s = $(s) | AR = $(AR[t]) | S = $(S[t]) | λ = $(λ[t]) | α = $(α[t])")
+        println("    s = $(s) | AR = $(AR[t]) | S = $(S[t]) | λ = $(λ[t]) | α = $(α[t])")
     end
 
     if combination == "additive"
@@ -445,8 +445,8 @@ for j in 1:5
         title = "Série $j - AR(1) × (1 + Sazo) - Gamma"
     end
 
-    p1 = plot(y,label="")
-    p2 = plot_ACF(y)
+    p1 = plot(y[2:end],label="")
+    p2 = plot_ACF(y[2:end])
     plot(p1, p2,  layout=grid(2,1), size=(800,600), plot_title = title)
     savefig(path_saida*"$(combination)_ar_gamma_serie_$(j).png")
 

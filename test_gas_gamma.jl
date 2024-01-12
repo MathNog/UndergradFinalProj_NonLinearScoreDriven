@@ -54,9 +54,9 @@ dict_d = Dict(0.0 => "d_0", 0.5 => "d_05", 1.0 => "d_1")
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "ena"
-y                  = dict_series[serie]["values"][10:end]
-dates              = dict_series[serie]["dates"][10:end]
+serie = "carga"
+y                  = dict_series[serie]["values"]#[10:end]
+dates              = dict_series[serie]["dates"]#[10:end]
 initial_components = dict_series[serie]["components"]
 
 steps_ahead = 12
@@ -80,8 +80,8 @@ dates_test  = dates[len_train+1:end]
 
 distribution = "Gamma"
 dist         = UnobservedComponentsGAS.GammaDistribution(missing, missing)
-combination  = "multiplicative2"
-combinacao   = "mult2"
+combination  = "multiplicative1"
+combinacao   = "mult1"
 
 d   = 1.0
 α   = 0.5
@@ -106,10 +106,10 @@ num_scenarious = 500
 
 gas_model = DICT_MODELS[distribution][serie]
   
-initial_values = FuncoesTeste.get_initial_values_from_components(y_train, initial_components, stochastic, serie, distribution) 
+# initial_values = FuncoesTeste.get_initial_values_from_components(y_train, initial_components, stochastic, serie, distribution) 
 
 fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, 
-                                                        max_optimization_time=300., initial_values=initial_values);
+                                                        max_optimization_time=300.);#, initial_values=initial_values);
 
 # gas_model = DICT_MODELS[distribution][serie]
 # auto_model = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
@@ -140,9 +140,16 @@ y_train                      *= scale_factor
 forecast["mean"]             *= scale_factor
 forecast["scenarios"]        *= scale_factor
 
-# # Avaliar possiveis mudancas entre fit e forec
-# plot(dict_hyperparams_and_fitted_components["ar"]["value"][2,:,:][2:end,1], title = "AR")
-# plot(dict_hyperparams_and_fitted_components["seasonality"]["value"][2,:,:][2:end,1], title = "Sazo")
+
+sol_sum = solution_summary(fitted_model.model;verbose=true) #informacoes demais
+primal_feasibility_report(fitted_model.model) #não muito util
+
+path_dados = current_path*"/Dados/SeriesArtificiais/"
+json_string = JSON.json(initial_values)
+open(path_dados*"fitted_gamma_rws_sazo_multiplicative1.json","w") do f 
+    write(f, json_string) 
+end
+
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 
 path_saida = current_path*"\\Saidas\\CombNaoLinear\\LinkFunction\\$combination\\$(dict_d[d])\\$distribution\\"
