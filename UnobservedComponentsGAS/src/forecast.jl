@@ -208,14 +208,12 @@ end
 "
 Updates the dict_hyperparams_and_fitted_components with the distribution parameters scenarios, for a specific time t.
 "
-function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any}, param::Int64, t::Int64, s::Int64; combination::String="additive")
+function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any}, param::Int64, t::Int64, s::Int64, dist::ScoreDrivenDistribution; combination::String="additive")
 
     m = dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] +
         dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] +
         dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s]
-    # println("m = ", m)
-    # println("sazo = ", dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s])
-    # println("Intercepto = ", dict_hyperparams_and_fitted_components["intercept"][param])
+    # Colcoar link aqui nesses ifs
     if combination == "additive"
         # println("Combination $combination")
         # μ_t = m_t + s_t
@@ -226,18 +224,17 @@ function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any
         # μ_t = m_t × s_t
         dict_hyperparams_and_fitted_components["params"][param, t, s] = dict_hyperparams_and_fitted_components["intercept"][param] + 
                                                                     (m * dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s])
-    elseif combination == "multiplicative2"
+    else #combination == "multiplicative2"
         # println("Combination $combination")
         # μ_t = m_t × (1 + s_t)
         dict_hyperparams_and_fitted_components["params"][param, t, s] = dict_hyperparams_and_fitted_components["intercept"][param] + 
                                                                         (m * (1 .+ dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s]))
-    else #combination == "multiplicative3"
-        # println("Combination $combination")
-        # μ_t = m_t + (1 + b × m_t) × s_t
-        dict_hyperparams_and_fitted_components["params"][param, t, s] = dict_hyperparams_and_fitted_components["intercept"][param] + 
-                                                                        m + (1 .+ 0.05*m)*dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s]
     end 
-    # println("Param = ",dict_hyperparams_and_fitted_components["params"][param, t, s])
+    
+    if typeof(dist) == UnobservedComponentsGAS.GammaDistribution
+        println("Colocando funcao de ligação log/exp")
+        dict_hyperparams_and_fitted_components["params"][param, t, s] = exp.(dict_hyperparams_and_fitted_components["params"][param, t, s])
+    end
                                                                                 
 end
 
@@ -325,7 +322,7 @@ function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitt
                 if has_AR(ar, i)
                     update_AR!(dict_hyperparams_and_fitted_components, order, i, T_fitted + t, s)
                 end
-                update_params!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s; combination=combination)
+                update_params!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s, dist; combination=combination)
             end
             # println("Param = ", dict_hyperparams_and_fitted_components["params"][:, T_fitted + t, s])
             # println("Pred_y = ", sample_dist(dict_hyperparams_and_fitted_components["params"][:, T_fitted + t, s], dist))

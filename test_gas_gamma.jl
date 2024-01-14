@@ -24,9 +24,13 @@ carga            = CSV.read(path_series*"carga_limpo.csv", DataFrame)
 airline          = CSV.read(path_series*"AirPassengers.csv", DataFrame)
 
 carga_components            = CSV.read(path_series*"components_ets_multiplicativo_carga.csv", DataFrame)[:,2:end]
-ena_components              = CSV.read(path_series*"components_ets_multiplicativo_ena.csv", DataFrame)[:,2:end]
+ena_components              = CSV.read(path_series*"components_ets_multiplicativo_ena.csv", DataFrame)[2:end,2:end]
 carga_components_normalized = CSV.read(path_series*"components_ets_multiplicativo_carga_normalizada.csv", DataFrame)[:,2:end]
 ena_components_normalized   = CSV.read(path_series*"components_ets_multiplicativo_ena_normalizada.csv", DataFrame)[:,2:end]
+
+ena_components_10   = CSV.read(path_series*"components_ets_multiplicativo_ena_10.csv", DataFrame)[2:end,2:end]
+ena_components_100  = CSV.read(path_series*"components_ets_multiplicativo_ena_100.csv", DataFrame)[2:end,2:end]
+ena_components_1000 = CSV.read(path_series*"components_ets_multiplicativo_ena_1000.csv", DataFrame)[2:end,2:end]
 
 dict_series                 = Dict()
 dict_series["ena"]          = Dict()
@@ -35,7 +39,7 @@ dict_series["airline"]      = Dict()
 
 dict_series["ena"]["values"]   = ena[:,:ENA]
 dict_series["ena"]["dates"]    = ena[:,:Data]
-dict_series["ena"]["components"] = ena_components
+dict_series["ena"]["components"] = ena_components_1000
 
 dict_series["carga"]["values"] = carga[:,:Carga]
 dict_series["carga"]["dates"]  = carga[:,:Data]
@@ -51,8 +55,8 @@ dict_d = Dict(0.0 => "d_0", 0.5 => "d_05", 1.0 => "d_1")
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
 serie = "carga"
-y = dict_series[serie]["values"]
-dates = dict_series[serie]["dates"]
+y                  = dict_series[serie]["values"][10:end]
+dates              = dict_series[serie]["dates"][10:end]
 initial_components = dict_series[serie]["components"]
 
 steps_ahead = 12
@@ -62,25 +66,27 @@ y_ref   = y[1:len_train]
 y_train = y[1:len_train]
 y_test  = y[len_train+1:end]
 
-# min_val = 1.5
-# max_val = 2.5
+# min_val = 1000.0
+# max_val = 3000.0
+# scale_factor = 1
 
 # y_train = FuncoesTeste.normalize_data(y_train) #airline, carga
 # y_train = FuncoesTeste.scale_data(y_train, min_val, max_val) #ena
 # y_train = FuncoesTeste.scale_data(y_train, 0.1, 1.1) #carga
+# y_train = y_train./scale_factor
 
 dates_train = dates[1:len_train]
 dates_test  = dates[len_train+1:end]
 
 distribution = "Gamma"
 dist         = UnobservedComponentsGAS.GammaDistribution(missing, missing)
-combination  = "multiplicative2"
-combinacao   = "mult2"
+combination  = "additive"
+combinacao   = "add"
 
 d   = 1.0
-α   = 0.1
-tol = 5e-5
-stochastic = true
+α   = 0.5
+tol = 5e-3
+stochastic = false
 
 DICT_MODELS["Gamma"] = Dict() 
 
@@ -100,24 +106,10 @@ num_scenarious = 500
 
 gas_model = DICT_MODELS[distribution][serie]
   
-initial_values = FuncoesTeste.get_initial_values_from_components(y_train, initial_components, stochastic, serie, distribution) 
+# initial_values = FuncoesTeste.get_initial_values_from_components(y_train, initial_components, stochastic, serie, distribution) 
 
 fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, 
-                                                        max_optimization_time=300., initial_values=initial_values);
-
-# dict_initial = deepcopy(fitted_model.components["param_2"])
-# dict_initial["param_1"] = fitted_model.fitted_params["param_1"][2]
-# dict_initial["param_2"] = fitted_model.fitted_params["param_2"][2]
-
-# open("fitted_gamma_ar_sazo_$(combination).json", "w") do f
-#     JSON3.write(f, dict_initial)
-#     println(f)
-# end
-
-# fitted_model.fitted_params["param_1"]
-
-# plot(initial_values["rws"]["values"].+initial_values["slope"]["values"].+initial_values["seasonality"]["values"])
-# plot!(y_train)
+                                                        max_optimization_time=300.);#, initial_values=initial_values);
 
 # gas_model = DICT_MODELS[distribution][serie]
 # auto_model = UnobservedComponentsGAS.auto_gas(gas_model, y_train, steps_ahead)
@@ -126,10 +118,14 @@ fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; �
 # d = gas_model.d
 # α = fitted_model.penalty_factor
 
-std_residuals = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, true)
-residuals     = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, false)
+var           = fitted_model.fitted_params["param_2"].^2 ./ fitted_model.fitted_params["param_1"]
+std_residuals = FuncoesTeste.get_std_residuals(y_train, fitted_model.fit_in_sample, var)#FuncoesTeste.get_residuals(fitted_model, distribution, y_train, true)
 q_residuals   = FuncoesTeste.get_quantile_residuals(fitted_model)
 forecast, dict_hyperparams_and_fitted_components = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious; combination=combination)
+
+
+plot(std_residuals)
+FuncoesTeste.plot_acf_residuals(res, distribution, serie, "pearson", combinacao, d)
 
 # fitted_model.fit_in_sample = FuncoesTeste.denormalize_data(fitted_model.fit_in_sample, y_ref)
 # y_train                    = FuncoesTeste.denormalize_data(y_train, y_ref)
@@ -142,17 +138,30 @@ forecast, dict_hyperparams_and_fitted_components = UnobservedComponentsGAS.predi
 # forecast["mean"]              = FuncoesTeste.unscale_data(forecast["mean"], y_ref)
 # forecast["scenarios"]         = FuncoesTeste.unscale_data(forecast["scenarios"], y_ref)
 
-# # Avaliar possiveis mudancas entre fit e forec
-# plot(dict_hyperparams_and_fitted_components["ar"]["value"][2,:,:][2:end,1], title = "AR")
-# plot(dict_hyperparams_and_fitted_components["seasonality"]["value"][2,:,:][2:end,1], title = "Sazo")
+fitted_model.fit_in_sample[1] = y_train[1]
+fitted_model.fit_in_sample  .*= scale_factor 
+y_train                      *= scale_factor 
+forecast["mean"]             *= scale_factor
+forecast["scenarios"]        *= scale_factor
+
+
+sol_sum = solution_summary(fitted_model.model;verbose=true) #informacoes demais
+primal_feasibility_report(fitted_model.model) #não muito util
+
+path_dados = current_path*"/Dados/SeriesArtificiais/"
+json_string = JSON.json(initial_values)
+open(path_dados*"fitted_gamma_rws_sazo_multiplicative1.json","w") do f 
+    write(f, json_string) 
+end
+
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 
-path_saida = current_path*"\\Saidas\\CombNaoLinear\\ETS_init\\$combination\\$(dict_d[d])\\$distribution\\"
+path_saida = current_path*"\\Saidas\\CombNaoLinear\\LinkFunction\\$combination\\$(dict_d[d])\\$distribution\\"
 # path_saida = current_path*"\\Saidas\\Benchmark\\$distribution\\"
 
 recover_scale = false
 
-df_hyperparams = DataFrame("d"=>d, "tol"=>tol, "α"=>α, "stochastic"=>stochastic)#, "min_val"=>min_val, "max_val"=>max_val)
+df_hyperparams = DataFrame("d"=>d, "tol"=>tol, "α"=>α, "stochastic"=>stochastic, "scale_factor"=>scale_factor)#, "min_val"=>min_val, "max_val"=>max_val)
 CSV.write(path_saida*"$(serie)_hyperparams.csv",df_hyperparams)
 
 dict_params = DataFrame(FuncoesTeste.get_parameters(fitted_model))
