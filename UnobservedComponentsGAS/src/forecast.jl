@@ -231,10 +231,10 @@ function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any
                                                                         (m * (1 .+ dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s]))
     end 
     
-    if typeof(dist) == UnobservedComponentsGAS.GammaDistribution
-        println("Colocando funcao de ligação log/exp")
-        dict_hyperparams_and_fitted_components["params"][param, t, s] = exp.(dict_hyperparams_and_fitted_components["params"][param, t, s])
-    end
+    # if typeof(dist) == UnobservedComponentsGAS.GammaDistribution
+    #     println("Colocando funcao de ligação log/exp")
+    #     dict_hyperparams_and_fitted_components["params"][param, t, s] = exp.(dict_hyperparams_and_fitted_components["params"][param, t, s])
+    # end
                                                                                 
 end
 

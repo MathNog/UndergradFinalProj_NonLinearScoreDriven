@@ -5,7 +5,7 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
     combination in ["additive", "multiplicative2"] ? initial_vector  = zeros(length(y)) : initial_vector  = ones(length(y))
     combination in ["additive", "multiplicative2"] ? initial_γ_value = zeros(1) : initial_γ_value = ones(1)
 
-    typeof(dist) == UnobservedComponentsGAS.GammaDistribution ? y_link = deepcopy(log.(y)) : y_link = deepcopy(y)
+    typeof(dist) == UnobservedComponentsGAS.GammaDistribution ? y_link = deepcopy(y) : y_link = deepcopy(y)
 
     if has_level || has_slope || has_seasonality
         if has_explanatories
@@ -15,6 +15,7 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
         end
 
         if order != [0]
+            println("Entrou aqui")
             res = y_link .- output.fit
             fit_ar_model, ar_coefs, ar_intercept = fit_AR_model(res, order)
 

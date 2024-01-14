@@ -150,7 +150,7 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
         
         if typeof(dist) == UnobservedComponentsGAS.GammaDistribution
             println("Colocando funcao de ligação log/exp")
-            @NLconstraint(model,[t = 2:T], parameters[t, i] ==  exp(dynamic_aux[t]))
+            @NLconstraint(model,[t = 2:T], parameters[t, i] ==  dynamic_aux[t])
         else
             println("Colocando funcao de ligação identidade")
             @NLconstraint(model,[t = 2:T], parameters[t, i] ==  dynamic_aux[t])

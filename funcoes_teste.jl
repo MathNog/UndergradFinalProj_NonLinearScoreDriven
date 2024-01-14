@@ -67,18 +67,15 @@ function get_std_residuals(y, fit_in_sample, var)
 end
 
 
-function get_residuals(fitted_model, model, y, standarize)
-    if model == "Normal"
-        return fitted_model.residuals["std_residuals"][2:end]
-    else
-        r = (y .- fitted_model.fit_in_sample)[2:end]
-        if standarize
-            return (r.-mean(r))./std(r)
-        else
-            return r
-        end
-    end
-end
+# function get_residuals(fitted_model, model, y, standarize)
+
+#     r = (y .- fitted_model.fit_in_sample)[2:end]
+#     if standarize
+#         return (r.-mean(r))./std(r)
+#     else
+#         return r
+#     end
+# end
 
 function get_quantile_residuals(fitted_model)
     return fitted_model.residuals["q_residuals"]
@@ -92,19 +89,19 @@ function plot_residuals(residuals, dates, model, std_bool, serie, type, combinat
     else
         std_bool==true ? std_title = "Padronizados" : std_title = ""
         plot(title="Resíduos $std_title $model - $serie - $combination - d = $d", titlefontsize=12)
-        plot!(dates[2:end], residuals , label="Resíduos")
+        plot!(dates, residuals , label="Resíduos")
     end
 end
 
 function plot_acf_residuals(residuals, model, serie, type, combination, d)
     
-    acf_values = autocor(residuals[2:end])
-    lag_values = collect(0:length(acf_values) - 1)
+    acf_values = autocor(residuals)[1:15]
+    lag_values = collect(0:14)
     conf_interval = 1.96 / sqrt(length(residuals)-1)  # 95% confidence interval
 
     type == "quantile" ? tipo = "Quantílicos" : tipo = ""
     plot(title="FAC dos Residuos $tipo $model - $serie - $combination - d = $d", titlefontsize=11)
-    plot!(autocor(residuals[2:end]),seriestype=:stem, label="")
+    plot!(acf_values,seriestype=:stem, label="")
     hline!([conf_interval, -conf_interval], line = (:red, :dash), label = "IC 95%")
 end
 
@@ -121,7 +118,7 @@ function get_residuals_diagnosis_pvalues(residuals, fitted_model)
 end
 
 function get_residuals_diagnostics(residuals, α, fitted_model)
-    d = get_residuals_diagnosis_pvalues(residuals[2:end], fitted_model)
+    d = get_residuals_diagnosis_pvalues(residuals, fitted_model)
     nomes = Dict(:lb=>"Ljung Box", :jb=>"Jarque Bera", :arch=>"ARCHLM")
     rows = []
     for (teste,pvalue) in d
@@ -136,9 +133,9 @@ end
 
 function plot_residuals_histogram(residuals, model, serie, type, combination, d)
     if type == "quantile"
-        histogram(residuals[2:end], title="Histograma Residuos Quantílicos $model - $serie - $combination - d = $d", label="", titlefontsize=11)
+        histogram(residuals, title="Histograma Residuos Quantílicos $model - $serie - $combination - d = $d", label="", titlefontsize=11)
     else
-        histogram(residuals[2:end], title="Histograma Residuos $model - $serie - $combination - d = $d", label="", titlefontsize=11)
+        histogram(residuals, title="Histograma Residuos $model - $serie - $combination - d = $d", label="", titlefontsize=11)
     end
 end
 
@@ -153,7 +150,7 @@ function plot_fit_in_sample(fitted_model, fit_dates, y_train, model, recover_sca
     end
     # println(fit_in_sample)
     plot(fit_dates[2:end], y_train[2:end], label="Série")
-    plot!(fit_dates[2:end], fit_in_sample[1:end], label="Fit in sample")    
+    plot!(fit_dates[2:end], fit_in_sample, label="Fit in sample")    
     plot!(title=" Fit in sample GAS-CNO $model - $serie - $combination - d = $d", titlefontsize=11)
     
 end
@@ -187,7 +184,7 @@ function plot_fit_forecast(fitted_model, forecast,fit_dates, y_train, y_test, fo
     end
     y = vcat(y_train, y_test)
     p = plot(title = "Fit and Forecast GAS-CNO $model - $serie - $combination - d = $d", titlefontsize=11)
-    p = plot!(dates[2:end], y[2:end], label="Série")
+    p = plot!(dates, y, label="Série")
     p = plot!(fit_dates[2:end], fit_in_sample[1:end], label="Fit in sample") 
     p = plot!(forecast_dates, forecast_mean, label="Forecast", color="red")
     display(p)
@@ -254,15 +251,15 @@ function plot_diagnosis(residuals, dates, model, std_bool, serie, type, combinat
     # std_bool==true ? res = (residuals.-mean(residuals))./std(residuals) : res = residuals
     std_bool==true ? std_title = "Padronizados" : std_title = ""
     r = plot(title="Resíduos $tipo$std_title")
-    r = plot!(dates[2:end], residuals , label="Resíduos$tipo")
+    r = plot!(dates, residuals , label="Resíduos$tipo")
 
     @info "ACF"
-    acf_values = autocor(residuals[2:end])
+    acf_values = autocor(residuals)
     lag_values = collect(0:length(acf_values) - 1)
     conf_interval = 1.96 / sqrt(length(residuals)-1)  # 95% confidence interval
 
     a = plot(title="FAC dos Residuos$tipo")
-    a = plot!(autocor(residuals[2:end]),seriestype=:stem, label="")
+    a = plot!(collect(0:14), autocor(residuals)[1:15],seriestype=:stem, label="")
     a = hline!([conf_interval, -conf_interval], line = (:red, :dash), label = "IC 95%")
 
     @info "Todos"
