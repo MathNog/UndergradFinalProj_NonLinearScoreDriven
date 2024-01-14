@@ -45,6 +45,8 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
 
         if combination == "multiplicative3"
             components["param_$i"]["b_mult"] = value(model[:b_mult][i])
+        else
+            components["param_$i"]["b_mult"]    = Inf
         end
 
         if has_random_walk(random_walk, i)

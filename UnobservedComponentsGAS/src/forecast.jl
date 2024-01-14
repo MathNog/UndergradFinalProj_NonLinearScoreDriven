@@ -32,6 +32,7 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
     dict_hyperparams_and_fitted_components["params"]       = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
     dict_hyperparams_and_fitted_components["intercept"]    = zeros(num_params)
     dict_hyperparams_and_fitted_components["score"]        = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
+    dict_hyperparams_and_fitted_components["b_mult"]       = zeros(num_params)
   
     dict_hyperparams_and_fitted_components["rw"]["value"]  = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
     dict_hyperparams_and_fitted_components["rw"]["κ"]      = zeros(num_params)
@@ -62,6 +63,7 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
 
         if i in idx_params
             dict_hyperparams_and_fitted_components["intercept"][i] = components["param_$i"]["intercept"]
+            dict_hyperparams_and_fitted_components["b_mult"][i]    = components["param_$i"]["b_mult"]
         end
 
         if has_random_walk(random_walk, i)
@@ -213,6 +215,7 @@ function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any
     m = dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] +
         dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] +
         dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s]
+
     # Colcoar link aqui nesses ifs
     if combination == "additive"
         # println("Combination $combination")
@@ -224,11 +227,16 @@ function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any
         # μ_t = m_t × s_t
         dict_hyperparams_and_fitted_components["params"][param, t, s] = dict_hyperparams_and_fitted_components["intercept"][param] + 
                                                                     (m * dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s])
-    else #combination == "multiplicative2"
+    elseif combination == "multiplicative2"
         # println("Combination $combination")
         # μ_t = m_t × (1 + s_t)
         dict_hyperparams_and_fitted_components["params"][param, t, s] = dict_hyperparams_and_fitted_components["intercept"][param] + 
                                                                         (m * (1 .+ dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s]))
+    else
+        # println("Combination $combination")
+        # μ_t = m_t + exp(b*m_t) × s_t
+        dict_hyperparams_and_fitted_components["params"][param, t, s] = dict_hyperparams_and_fitted_components["intercept"][param] + 
+                                                                        (m + exp(b_mult*m) * dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s])
     end 
     
     # if typeof(dist) == UnobservedComponentsGAS.GammaDistribution
