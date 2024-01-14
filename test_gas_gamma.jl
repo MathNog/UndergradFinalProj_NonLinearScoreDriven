@@ -55,8 +55,8 @@ dict_d = Dict(0.0 => "d_0", 0.5 => "d_05", 1.0 => "d_1")
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
 serie = "carga"
-y                  = dict_series[serie]["values"]#[10:end]
-dates              = dict_series[serie]["dates"]#[10:end]
+y                  = dict_series[serie]["values"][10:end]
+dates              = dict_series[serie]["dates"][10:end]
 initial_components = dict_series[serie]["components"]
 
 steps_ahead = 12
@@ -68,25 +68,25 @@ y_test  = y[len_train+1:end]
 
 # min_val = 1000.0
 # max_val = 3000.0
-scale_factor = 1000
+# scale_factor = 1
 
 # y_train = FuncoesTeste.normalize_data(y_train) #airline, carga
 # y_train = FuncoesTeste.scale_data(y_train, min_val, max_val) #ena
 # y_train = FuncoesTeste.scale_data(y_train, 0.1, 1.1) #carga
-y_train = y_train./scale_factor
+# y_train = y_train./scale_factor
 
 dates_train = dates[1:len_train]
 dates_test  = dates[len_train+1:end]
 
 distribution = "Gamma"
 dist         = UnobservedComponentsGAS.GammaDistribution(missing, missing)
-combination  = "multiplicative1"
-combinacao   = "mult1"
+combination  = "additive"
+combinacao   = "add"
 
 d   = 1.0
 α   = 0.5
-tol = 5e-2
-stochastic = true
+tol = 5e-3
+stochastic = false
 
 DICT_MODELS["Gamma"] = Dict() 
 
@@ -118,10 +118,14 @@ fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; �
 # d = gas_model.d
 # α = fitted_model.penalty_factor
 
-std_residuals = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, true)
-residuals     = FuncoesTeste.get_residuals(fitted_model, distribution, y_train, false)
+var           = fitted_model.fitted_params["param_2"].^2 ./ fitted_model.fitted_params["param_1"]
+std_residuals = FuncoesTeste.get_std_residuals(y_train, fitted_model.fit_in_sample, var)#FuncoesTeste.get_residuals(fitted_model, distribution, y_train, true)
 q_residuals   = FuncoesTeste.get_quantile_residuals(fitted_model)
 forecast, dict_hyperparams_and_fitted_components = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious; combination=combination)
+
+
+plot(std_residuals)
+FuncoesTeste.plot_acf_residuals(res, distribution, serie, "pearson", combinacao, d)
 
 # fitted_model.fit_in_sample = FuncoesTeste.denormalize_data(fitted_model.fit_in_sample, y_ref)
 # y_train                    = FuncoesTeste.denormalize_data(y_train, y_ref)

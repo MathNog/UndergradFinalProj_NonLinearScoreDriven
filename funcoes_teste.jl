@@ -61,6 +61,12 @@ function get_parameters(fitted_model)
     return dict_params
 end
 
+
+function get_std_residuals(y, fit_in_sample, var)
+    return (y .- fit_in_sample) ./ sqrt.(var)
+end
+
+
 function get_residuals(fitted_model, model, y, standarize)
     if model == "Normal"
         return fitted_model.residuals["std_residuals"][2:end]

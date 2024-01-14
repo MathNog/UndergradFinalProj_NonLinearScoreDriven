@@ -171,9 +171,9 @@ function fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{G
     optimize!(model)
     @info termination_status(model)
     
-    valores = JuMP.values.(model)
+    # valores = JuMP.values.(model)
     # obj_f = JuMP.objective.(model)
-    println(valores)
+    # println(valores)
     # println(obj_f)
 
     return create_output_fit(model, parameters, y, missing, missing, gas_model, α)
