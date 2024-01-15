@@ -63,7 +63,10 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
 
         if i in idx_params
             dict_hyperparams_and_fitted_components["intercept"][i] = components["param_$i"]["intercept"]
+            println("b_mult entrando")
+            println(dict_hyperparams_and_fitted_components["b_mult"][i])
             dict_hyperparams_and_fitted_components["b_mult"][i]    = components["param_$i"]["b_mult"]
+            println(dict_hyperparams_and_fitted_components["b_mult"][i])
         end
 
         if has_random_walk(random_walk, i)
@@ -215,7 +218,8 @@ function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any
     m = dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] +
         dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] +
         dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s]
-
+    b_mult = dict_hyperparams_and_fitted_components["b_mult"][param]
+    
     # Colcoar link aqui nesses ifs
     if combination == "additive"
         # println("Combination $combination")
@@ -443,6 +447,7 @@ end
 Performs the forecast of the GAS model.
 "
 function predict(gas_model::GASModel, output::Output, y::Vector{Float64}, steps_ahead::Int64, num_scenarios::Int64; probabilistic_intervals::Vector{Float64} = [0.8, 0.95], combination::String="additive")
+    
     
     dict_hyperparams_and_fitted_components         = get_dict_hyperparams_and_fitted_components_with_forecast(gas_model, output, steps_ahead, num_scenarios; combination=combination)
     pred_y, dict_hyperparams_and_fitted_components = simulate(gas_model, output, dict_hyperparams_and_fitted_components, y, steps_ahead, num_scenarios; combination=combination)

@@ -21,6 +21,38 @@ function correct_scale(series, K, residuals)
     return exp.(series)*exp(0.5*σ²)
 end
 
+function get_fitted_values(fitted_model, dates_train, std_residuals, q_residuals, residuals, param, recover_scale)
+    dict_fitted_values = Dict()
+    dict_fitted_values["fit_in_sample"] = fitted_model.fit_in_sample
+    dict_fitted_values["dates"] = dates_train
+    dict_fitted_values["std_residuals"] = std_residuals
+    dict_fitted_values["q_residuals"] = q_residuals 
+    dict_fitted_values["residuals"] = residuals 
+    dict_fitted_values["param_1"] = fitted_model.fitted_params["param_1"]
+    dict_fitted_values["param_2"] = fitted_model.fitted_params["param_2"]
+
+    components = get_components(fitted_model, param, recover_scale, residuals)
+
+    for (key,value) in components
+        dict_fitted_values[key] = value
+    end
+
+    return DataFrame(dict_fitted_values)
+    
+end
+
+function get_forecast_values(forecast, dates_test)
+
+    col_names = ["dates", "mean"]
+    for s in 1:size(forecast["scenarios"],2)
+        push!(col_names, "s$s")
+    end
+    df_forecast = DataFrame(hcat(dates_test, forecast["mean"], forecast["scenarios"]), :auto)
+    rename!(df_forecast, col_names)
+
+    return df_forecast
+end
+
 function get_number_parameters(fitted_model)
     K = 0
     for param in keys(fitted_model.components)
@@ -55,6 +87,8 @@ function get_parameters(fitted_model)
                         dict_params[param*"_"*key*"_"*key2] = value2
                     end
                 end
+            elseif key == "b_mult"
+                dict_params[param*"_"*key] = value
             end
         end
     end

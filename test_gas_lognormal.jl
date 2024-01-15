@@ -23,8 +23,8 @@ ena              = CSV.read(path_series*"ena_limpo.csv",DataFrame)
 carga            = CSV.read(path_series*"carga_limpo.csv", DataFrame)
 airline          = CSV.read(path_series*"AirPassengers.csv", DataFrame)
 
-carga_components            = CSV.read(path_series*"components_ets_multiplicativo_carga.csv", DataFrame)[:,2:end]
-ena_components              = CSV.read(path_series*"components_ets_multiplicativo_ena.csv", DataFrame)[2:end,2:end]
+carga_components            = CSV.read(path_series*"components_ets_multiplicativo_carga_log.csv", DataFrame)[:,2:end]
+ena_components              = CSV.read(path_series*"components_ets_multiplicativo_ena_log.csv", DataFrame)[2:end,2:end]
 
 dict_series                 = Dict()
 dict_series["ena"]          = Dict()
@@ -72,12 +72,12 @@ dates_test  = dates[len_train+1:end]
 
 distribution = "LogNormal"
 dist         = UnobservedComponentsGAS.NormalDistribution(missing, missing)
-combination  = "multiplicative1"
-combinacao   = "mult1"
+combination  = "multiplicative3"
+combinacao   = "mult3"
 
 d   = 1.0
 α   = 0.0
-tol = 5e-5
+tol = 5e-1
 stochastic = false
 
 DICT_MODELS["LogNormal"] = Dict() 
@@ -110,8 +110,6 @@ q_residuals   = FuncoesTeste.get_quantile_residuals(fitted_model)
 res           = y_train .- fitted_model.fit_in_sample
 forecast, dict_hyperparams_and_fitted_components = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious; combination=combination)
 
-
-
 # fitted_model.fit_in_sample = FuncoesTeste.denormalize_data(fitted_model.fit_in_sample, y_ref)
 # y_train                    = FuncoesTeste.denormalize_data(y_train, y_ref)
 # forecast["mean"]           = FuncoesTeste.denormalize_data(forecast["mean"], y_ref)
@@ -137,6 +135,12 @@ CSV.write(path_saida*"$(serie)_hyperparams.csv",df_hyperparams)
 
 dict_params = DataFrame(FuncoesTeste.get_parameters(fitted_model))
 CSV.write(path_saida*"$(serie)_params.csv",dict_params)
+
+df_fitted_values = FuncoesTeste.get_fitted_values(fitted_model, dates_train, std_residuals, q_residuals, res, param, recover_scale)
+CSV.write(path_saida*"$(serie)_fitted_values.csv",dict_params)
+
+df_forecast = FuncoesTeste.get_forecast_values(forecast, dates_test)
+CSV.write(path_saida*"$(serie)_forecast_values.csv",dict_params)
 
 FuncoesTeste.plot_fit_in_sample(fitted_model, dates_train, y_train, distribution, recover_scale, res, serie, combinacao, d)
 savefig(path_saida*"$(serie)_fit_in_sample_$(distribution).png")

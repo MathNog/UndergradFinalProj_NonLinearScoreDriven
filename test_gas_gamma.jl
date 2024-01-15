@@ -50,7 +50,7 @@ dict_d = Dict(0.0 => "d_0", 0.5 => "d_05", 1.0 => "d_1")
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "carga"
+serie = "ena"
 y                  = dict_series[serie]["values"]
 dates              = dict_series[serie]["dates"]
 initial_components = dict_series[serie]["components"]
@@ -76,12 +76,12 @@ dates_test  = dates[len_train+1:end]
 
 distribution = "Gamma"
 dist         = UnobservedComponentsGAS.GammaDistribution(missing, missing)
-combination  = "multiplicative2"
-combinacao   = "mult2"
+combination  = "multiplicative3"
+combinacao   = "mult3"
 
 d   = 1.0
 α   = 0.0
-tol = 5e-10
+tol = 5e-7
 stochastic = false
 
 DICT_MODELS["Gamma"] = Dict() 
@@ -144,6 +144,12 @@ CSV.write(path_saida*"$(serie)_hyperparams.csv",df_hyperparams)
 
 dict_params = DataFrame(FuncoesTeste.get_parameters(fitted_model))
 CSV.write(path_saida*"$(serie)_params.csv",dict_params)
+
+df_fitted_values = FuncoesTeste.get_fitted_values(fitted_model, dates_train, std_residuals, q_residuals, res, param, recover_scale)
+CSV.write(path_saida*"$(serie)_fitted_values.csv",dict_params)
+
+df_forecast = FuncoesTeste.get_forecast_values(forecast, dates_test)
+CSV.write(path_saida*"$(serie)_forecast_values.csv",dict_params)
 
 FuncoesTeste.plot_fit_in_sample(fitted_model, dates_train, y_train, distribution, recover_scale, res, serie, combinacao, d)
 savefig(path_saida*"$(serie)_fit_in_sample_$(distribution).png")
