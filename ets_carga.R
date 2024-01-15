@@ -57,13 +57,38 @@ sazo = modelo$states[1:len_train, c(3:14)]
 write.csv(modelo$states[1:len_train,], file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_multiplicativo_carga_normalizada.csv")
 
 
+" ---- y em nível aditivo ---"
+
+y_train = y[1:len_train]
+y_train = ts(y_train, start = c(2002,1), end = c(2022, 6), frequency = 12)
+
+modelo = ets(y_train, model = "AAA")
+level = modelo$states[1:len_train, "l"]
+slope = modelo$states[1:len_train, "b"]
+sazo = modelo$states[1:len_train, c(3:14)]
+
+write.csv(modelo$states[1:len_train,], file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_aditivo_carga.csv")
+
+
+" ---- y em log aditivo ---"
+
+y_train = log(y[1:len_train])
+y_train = ts(y_train, start = c(2002,1), end = c(2022, 6), frequency = 12)
+
+modelo = ets(y_train, model = "AAA")
+level = modelo$states[1:len_train, "l"]
+slope = modelo$states[1:len_train, "b"]
+sazo = modelo$states[1:len_train, c(3:14)]
+
+write.csv(modelo$states[1:len_train,], file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_aditivo_carga_log.csv")
+
 
 
 " -------- Série de ENA ------------"
 
 ena = read.csv("C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\ena_limpo.csv")
 
-y = log(ena$ENA)
+y = ena$ENA
 datas = ena$Data
 
 len_test = 12
@@ -103,3 +128,28 @@ level = modelo$states[1:len_train, "l"]
 sazo = modelo$states[1:len_train, c(2:13)]
 
 write.csv(modelo$states, file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_multiplicativo_ena_normalizada.csv")
+
+
+
+" ---- y em nível aditivo ---"
+
+y_train = y[1:len_train]
+y_train = ts(y_train, start = c(2000,1), end = c(2022, 8), frequency = 12)
+
+modelo = ets(y_train, model = "ANA")
+#level = modelo$states[1:len_train, "l"]
+#sazo = modelo$states[1:len_train, c(2:13)]
+
+write.csv(modelo$states, file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_aditivo_ena.csv")
+
+" ---- y em log aditivo ---"
+
+y_train = log(y[1:len_train])
+y_train = ts(y_train, start = c(2000,1), end = c(2022, 8), frequency = 12)
+
+modelo = ets(y_train, model = "ANA")
+#level = modelo$states[1:len_train, "l"]
+#sazo = modelo$states[1:len_train, c(2:13)]
+
+write.csv(modelo$states, file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_aditivo_ena_log.csv")
+
