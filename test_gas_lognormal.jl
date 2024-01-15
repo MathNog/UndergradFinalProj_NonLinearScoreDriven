@@ -24,9 +24,7 @@ carga            = CSV.read(path_series*"carga_limpo.csv", DataFrame)
 airline          = CSV.read(path_series*"AirPassengers.csv", DataFrame)
 
 carga_components            = CSV.read(path_series*"components_ets_multiplicativo_carga.csv", DataFrame)[:,2:end]
-ena_components              = CSV.read(path_series*"components_ets_multiplicativo_ena.csv", DataFrame)[:,2:end]
-carga_components_normalized = CSV.read(path_series*"components_ets_multiplicativo_carga_normalizada.csv", DataFrame)[:,2:end]
-ena_components_normalized   = CSV.read(path_series*"components_ets_multiplicativo_ena_normalizada.csv", DataFrame)[:,2:end]
+ena_components              = CSV.read(path_series*"components_ets_multiplicativo_ena.csv", DataFrame)[2:end,2:end]
 
 dict_series                 = Dict()
 dict_series["ena"]          = Dict()
@@ -50,7 +48,7 @@ dict_d = Dict(0.0 => "d_0", 0.5 => "d_05", 1.0 => "d_1")
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "carga"
+serie = "ena"
 y     = log.(dict_series[serie]["values"])
 dates = dict_series[serie]["dates"]
 initial_components = dict_series[serie]["components"]
@@ -74,12 +72,12 @@ dates_test  = dates[len_train+1:end]
 
 distribution = "LogNormal"
 dist         = UnobservedComponentsGAS.NormalDistribution(missing, missing)
-combination  = "additive"
-combinacao   = "add"
+combination  = "multiplicative1"
+combinacao   = "mult1"
 
 d   = 1.0
 α   = 0.0
-tol = 5e-3
+tol = 5e-5
 stochastic = false
 
 DICT_MODELS["LogNormal"] = Dict() 
@@ -100,10 +98,10 @@ num_scenarious = 500
 
 gas_model = DICT_MODELS[distribution][serie]
 
-# initial_values = FuncoesTeste.get_initial_values_from_components(y_train, initial_components, stochastic, serie, distribution) 
+initial_values = FuncoesTeste.get_initial_values_from_components(y_train, initial_components, stochastic, serie, distribution) 
 
 fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, 
-                                                        max_optimization_time=300.);#, initial_values=initial_values);
+                                                        max_optimization_time=300., initial_values=initial_values);
 
 fitted_model.fit_in_sample[1] = y_train[1]
 var           = fitted_model.fitted_params["param_2"]

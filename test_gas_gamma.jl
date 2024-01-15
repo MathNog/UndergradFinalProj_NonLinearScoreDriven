@@ -25,12 +25,8 @@ airline          = CSV.read(path_series*"AirPassengers.csv", DataFrame)
 
 carga_components            = CSV.read(path_series*"components_ets_multiplicativo_carga.csv", DataFrame)[:,2:end]
 ena_components              = CSV.read(path_series*"components_ets_multiplicativo_ena.csv", DataFrame)[2:end,2:end]
-carga_components_normalized = CSV.read(path_series*"components_ets_multiplicativo_carga_normalizada.csv", DataFrame)[:,2:end]
-ena_components_normalized   = CSV.read(path_series*"components_ets_multiplicativo_ena_normalizada.csv", DataFrame)[:,2:end]
 
-ena_components_10   = CSV.read(path_series*"components_ets_multiplicativo_ena_10.csv", DataFrame)[2:end,2:end]
-ena_components_100  = CSV.read(path_series*"components_ets_multiplicativo_ena_100.csv", DataFrame)[2:end,2:end]
-ena_components_1000 = CSV.read(path_series*"components_ets_multiplicativo_ena_1000.csv", DataFrame)[2:end,2:end]
+ena_components              = CSV.read(path_series*"components_ets_aditivo_ena.csv", DataFrame)[2:end,2:end]
 
 dict_series                 = Dict()
 dict_series["ena"]          = Dict()
@@ -39,7 +35,7 @@ dict_series["airline"]      = Dict()
 
 dict_series["ena"]["values"]   = ena[:,:ENA]
 dict_series["ena"]["dates"]    = ena[:,:Data]
-dict_series["ena"]["components"] = ena_components_1000
+dict_series["ena"]["components"] = ena_components
 
 dict_series["carga"]["values"] = carga[:,:Carga]
 dict_series["carga"]["dates"]  = carga[:,:Data]
@@ -95,7 +91,7 @@ DICT_MODELS["Gamma"]["carga"] = UnobservedComponentsGAS.GASModel(dist, [false, t
                                                         Dict(2 => 12), false, stochastic, combination)
 
 DICT_MODELS["Gamma"]["ena"] = UnobservedComponentsGAS.GASModel(dist, [false, true], d, Dict(2=>false), 
-                                                            Dict(2=>false), Dict(2=>1), 
+                                                            Dict(2=>false), Dict(2=>2), 
                                                             Dict(2 => 12), false, stochastic, combination)
 
 DICT_MODELS["Gamma"]["airline"] = UnobservedComponentsGAS.GASModel(dist, [false, true], d, Dict(2=>false),  
@@ -106,10 +102,10 @@ num_scenarious = 500
 
 gas_model = DICT_MODELS[distribution][serie]
   
-# initial_values = FuncoesTeste.get_initial_values_from_components(y_train, initial_components, stochastic, serie, distribution) 
+initial_values = FuncoesTeste.get_initial_values_from_components(y_train, initial_components, stochastic, serie, distribution) 
 
 fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, 
-                                                        max_optimization_time=300.);#, initial_values=initial_values);
+                                                        max_optimization_time=300., initial_values=initial_values);
 
 fitted_model.fit_in_sample[1] = y_train[1]
 var           = fitted_model.fitted_params["param_2"].^2 ./ fitted_model.fitted_params["param_1"]

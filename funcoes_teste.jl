@@ -25,7 +25,7 @@ function get_number_parameters(fitted_model)
     K = 0
     for param in keys(fitted_model.components)
         for (key,value) in fitted_model.components[param]
-            if key != "intercept"
+            if key != "intercept" && key != "b_mult"
                 for (key2, value2) in value["hyperparameters"]
                     if key2 in ["γ", "γ_star"]
                         K+=size(value2,1)
@@ -47,7 +47,7 @@ function get_parameters(fitted_model)
         println(param)
         for (key,value) in fitted_model.components[param]
             println(" ", key,)
-            if key != "intercept"
+            if key != "intercept" && key != "b_mult"
                 for (key2, value2) in value["hyperparameters"]
                     println("   ", key2)
                     # println("   ", value2)
@@ -197,12 +197,12 @@ function get_components(fitted_model, param, recover_scale, residuals)
     if recover_scale
         K = get_number_parameters(fitted_model)
         for key in keys(dict_components)
-            key != "intercept" ? components[key] = correct_scale(dict_components[key]["value"], K, residuals) : nothing
+            key != "intercept"  && key != "b_mult" ? components[key] = correct_scale(dict_components[key]["value"], K, residuals) : nothing
         end
             
     else     
         for key in keys(dict_components)
-            key != "intercept" ? components[key] = dict_components[key]["value"] : nothing
+            key != "intercept" && key != "b_mult" ? components[key] = dict_components[key]["value"] : nothing
         end
     end
     return components
