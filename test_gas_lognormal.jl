@@ -26,6 +26,8 @@ airline          = CSV.read(path_series*"AirPassengers.csv", DataFrame)
 carga_components            = CSV.read(path_series*"components_ets_multiplicativo_carga_log.csv", DataFrame)[:,2:end]
 ena_components              = CSV.read(path_series*"components_ets_multiplicativo_ena_log.csv", DataFrame)[2:end,2:end]
 
+# ena_components              = CSV.read(path_series*"components_ets_aditivo_ena_log.csv", DataFrame)[2:end,2:end]
+
 dict_series                 = Dict()
 dict_series["ena"]          = Dict()
 dict_series["carga"]        = Dict()
@@ -48,7 +50,7 @@ dict_d = Dict(0.0 => "d_0", 0.5 => "d_05", 1.0 => "d_1")
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "ena"
+serie = "carga"
 y     = log.(dict_series[serie]["values"])
 dates = dict_series[serie]["dates"]
 initial_components = dict_series[serie]["components"]
@@ -77,7 +79,7 @@ combinacao   = "mult3"
 
 d   = 1.0
 α   = 0.0
-tol = 5e-1
+tol = 5e-3
 stochastic = false
 
 DICT_MODELS["LogNormal"] = Dict() 
@@ -136,7 +138,7 @@ CSV.write(path_saida*"$(serie)_hyperparams.csv",df_hyperparams)
 dict_params = DataFrame(FuncoesTeste.get_parameters(fitted_model))
 CSV.write(path_saida*"$(serie)_params.csv",dict_params)
 
-df_fitted_values = FuncoesTeste.get_fitted_values(fitted_model, dates_train, std_residuals, q_residuals, res, param, recover_scale)
+df_fitted_values = FuncoesTeste.get_fitted_values(fitted_model, dates_train, std_residuals, q_residuals, res, "param_1", recover_scale)
 CSV.write(path_saida*"$(serie)_fitted_values.csv",dict_params)
 
 df_forecast = FuncoesTeste.get_forecast_values(forecast, dates_test)
