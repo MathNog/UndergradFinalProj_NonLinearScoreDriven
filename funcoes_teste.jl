@@ -135,9 +135,37 @@ function plot_acf_residuals(residuals, model, serie, type, combination, d)
 
     type == "quantile" ? tipo = "Quantílicos" : tipo = ""
     plot(title="FAC dos Residuos $tipo $model - $serie - $combination - d = $d", titlefontsize=11)
-    plot!(acf_values,seriestype=:stem, label="")
+    plot!(lag_values,acf_values,seriestype=:stem, label="",xticks=(lag_values,lag_values))
     hline!([conf_interval, -conf_interval], line = (:red, :dash), label = "IC 95%")
 end
+
+function test_H(residuals; type::String="julia")
+    
+    T = length(residuals)
+    h = Int64(floor(T/3))
+
+    res1 = residuals[1:h]
+    res3 = residuals[2*h+1:end]
+
+    if type == "julia"
+        f_test  = VarianceFTest(res3, res1)
+        p_value = pvalue(f_test)
+        F_statistic = f_test.F
+    else    
+        σ2_1 = var(res1; corrected=true) # / (n-1)
+        σ2_3 = var(res3; corrected=true)
+
+        df1 = length(res1) - 1
+        df3 = length(res3) - 1
+
+        F_statistic = (σ2_3 / σ2_1)
+
+        p_value = 2* minimum([ccdf(FDist(df3, df1), F_statistic), cdf(FDist(df3, df1), F_statistic)])
+    end
+
+    return F_statistic, p_value
+end
+
 
 function get_residuals_diagnosis_pvalues(residuals, fitted_model)
     dof = get_number_parameters(fitted_model)
@@ -147,13 +175,15 @@ function get_residuals_diagnosis_pvalues(residuals, fitted_model)
     lb = pvalue(LjungBoxTest(residuals, 24, dof))
     # ARCH
     arch = pvalue(ARCHLMTest(residuals, 12))
+    #H 
+    H = test_H(residuals)[2]
     
-    return Dict(:lb=>lb, :jb=>jb, :arch=>arch)
+    return Dict(:lb=>lb, :jb=>jb, :arch=>arch, :H=>H)
 end
 
 function get_residuals_diagnostics(residuals, α, fitted_model)
     d = get_residuals_diagnosis_pvalues(residuals, fitted_model)
-    nomes = Dict(:lb=>"Ljung Box", :jb=>"Jarque Bera", :arch=>"ARCHLM")
+    nomes = Dict(:lb=>"Ljung Box", :jb=>"Jarque Bera", :arch=>"ARCHLM", :H=>"H")
     rows = []
     for (teste,pvalue) in d
         nome = nomes[teste]
@@ -171,6 +201,19 @@ function plot_residuals_histogram(residuals, model, serie, type, combination, d)
     else
         histogram(residuals, title="Histograma Residuos $model - $serie - $combination - d = $d", label="", titlefontsize=11)
     end
+end
+
+function get_log_likelihood(fitted_model)
+
+    # T = length(y)
+    # if dist == "LogNormal"
+    #     log_like = sum(logpdf(LogNormal(param_1[i], param_2[i]), y[i]) for i in 1:T)
+    # else
+    #     log_like = sum(logpdf(Gamma(param_1[i], param_2[i]/param_1[i]), y[i]) for i in 1:T)
+    # end
+    log_like = JuMP.objective_value(fitted_model.model)
+
+    return log_like
 end
 
 function plot_fit_in_sample(fitted_model, fit_dates, y_train, model, recover_scale, residuals, serie, combination, d)
@@ -293,7 +336,7 @@ function plot_diagnosis(residuals, dates, model, std_bool, serie, type, combinat
     conf_interval = 1.96 / sqrt(length(residuals)-1)  # 95% confidence interval
 
     a = plot(title="FAC dos Residuos$tipo")
-    a = plot!(collect(0:14), autocor(residuals)[1:15],seriestype=:stem, label="")
+    a = plot!(lag_values, acf_values[1:15],seriestype=:stem, label="", xticks=(lag_values,lag_values))
     a = hline!([conf_interval, -conf_interval], line = (:red, :dash), label = "IC 95%")
 
     @info "Todos"

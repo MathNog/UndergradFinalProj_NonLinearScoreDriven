@@ -9,3 +9,8 @@ Vazão Média Mensal Bacia do Rio São Francisco estação de Juazeiro
 https://www.snirh.gov.br/hidroweb/serieshistoricas
 
 Todos os dados foram acessados em 20/08/2023
+
+UK Visits Abroad
+https://www.ons.gov.uk/peoplepopulationandcommunity/leisureandtourism/datasets/internationalpassengersurveytimeseriesspreadsheet
+
+Acesado em 16/01/2024

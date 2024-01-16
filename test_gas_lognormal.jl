@@ -22,6 +22,7 @@ DICT_MODELS = Dict()
 ena              = CSV.read(path_series*"ena_limpo.csv",DataFrame)
 carga            = CSV.read(path_series*"carga_limpo.csv", DataFrame)
 airline          = CSV.read(path_series*"AirPassengers.csv", DataFrame)
+uk_visits        = CSV.read(path_series*"uk_visits.csv", DataFrame)
 
 carga_components            = CSV.read(path_series*"components_ets_multiplicativo_carga_log.csv", DataFrame)[:,2:end]
 ena_components              = CSV.read(path_series*"components_ets_multiplicativo_ena_log.csv", DataFrame)[2:end,2:end]
@@ -105,6 +106,7 @@ initial_values = FuncoesTeste.get_initial_values_from_components(y_train, initia
 fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, 
                                                         max_optimization_time=300., initial_values=initial_values);
 
+fitted_model.fit_in_sample
 fitted_model.fit_in_sample[1] = y_train[1]
 var           = fitted_model.fitted_params["param_2"]
 std_residuals = FuncoesTeste.get_std_residuals(y_train, fitted_model.fit_in_sample, var)
@@ -139,10 +141,10 @@ dict_params = DataFrame(FuncoesTeste.get_parameters(fitted_model))
 CSV.write(path_saida*"$(serie)_params.csv",dict_params)
 
 df_fitted_values = FuncoesTeste.get_fitted_values(fitted_model, dates_train, std_residuals, q_residuals, res, "param_1", recover_scale)
-CSV.write(path_saida*"$(serie)_fitted_values.csv",dict_params)
+CSV.write(path_saida*"$(serie)_fitted_values.csv",df_fitted_values)
 
 df_forecast = FuncoesTeste.get_forecast_values(forecast, dates_test)
-CSV.write(path_saida*"$(serie)_forecast_values.csv",dict_params)
+CSV.write(path_saida*"$(serie)_forecast_values.csv",df_forecast)
 
 FuncoesTeste.plot_fit_in_sample(fitted_model, dates_train, y_train, distribution, recover_scale, res, serie, combinacao, d)
 savefig(path_saida*"$(serie)_fit_in_sample_$(distribution).png")
@@ -158,6 +160,9 @@ savefig(path_saida*"$(serie)_forecast_histograms_$(distribution).png")
 
 FuncoesTeste.plot_fit_forecast(fitted_model, forecast, dates_train, y_train, y_test, dates_test, distribution, res, recover_scale, serie, combinacao, d)
 savefig(path_saida*"$(serie)_fit_forecast_$(distribution).png")
+
+log_like = FuncoesTeste.get_log_likelihood(fitted_model)
+CSV.write(path_saida*"$(serie)_log_likelihood.csv",DataFrame(Dict("Log Likelihood"=>log_like)))
 
 FuncoesTeste.plot_residuals(std_residuals[2:end], dates_train[2:end], distribution, true, serie, "pearson", combinacao, d)
 savefig(path_saida*"$(serie)_residuals_$(distribution).png")
