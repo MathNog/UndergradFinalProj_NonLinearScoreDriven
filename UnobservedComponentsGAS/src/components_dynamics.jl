@@ -207,7 +207,7 @@ function include_explanatories_in_dynamic(model::Ml, X::Union{Missing, Matrix{Fl
     if has_explanatories
         return X[t, :]' * model[:β][:, idx_param]
     else
-        combination == "additive" ? r = 0 : r = 1
-        return r
+        # combination == "additive" ? r = 0 : r = 1
+        return 0
     end
 end

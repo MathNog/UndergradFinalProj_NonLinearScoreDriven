@@ -26,6 +26,7 @@ uk_visits        = CSV.read(path_series*"uk_visits.csv", DataFrame)
 
 carga_components            = CSV.read(path_series*"components_ets_multiplicativo_carga_log.csv", DataFrame)[:,2:end]
 ena_components              = CSV.read(path_series*"components_ets_multiplicativo_ena_log.csv", DataFrame)[2:end,2:end]
+uk_visits_components            = CSV.read(path_series*"components_ets_multiplicativo_uk_visits_log.csv", DataFrame)[:,2:end]
 
 # ena_components              = CSV.read(path_series*"components_ets_aditivo_ena_log.csv", DataFrame)[2:end,2:end]
 
@@ -33,6 +34,7 @@ dict_series                 = Dict()
 dict_series["ena"]          = Dict()
 dict_series["carga"]        = Dict()
 dict_series["airline"]      = Dict()
+dict_series["uk_visits"]    = Dict()
 
 dict_series["ena"]["values"]   = ena[:,:ENA]
 dict_series["ena"]["dates"]    = ena[:,:Data]
@@ -41,6 +43,10 @@ dict_series["ena"]["components"] = ena_components
 dict_series["carga"]["values"] = carga[:,:Carga]
 dict_series["carga"]["dates"]  = carga[:,:Data]
 dict_series["carga"]["components"] = carga_components
+
+dict_series["uk_visits"]["values"] = uk_visits[:,:Valor]
+dict_series["uk_visits"]["dates"]  = uk_visits[:,:Data]
+dict_series["uk_visits"]["components"] = uk_visits_components
 
 dict_series["airline"]["values"] = airline[:,2] .* 1.0
 dict_series["airline"]["dates"]  = airline[:,:Month]
@@ -51,7 +57,7 @@ dict_d = Dict(0.0 => "d_0", 0.5 => "d_05", 1.0 => "d_1")
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "carga"
+serie = "uk_visits"
 y     = log.(dict_series[serie]["values"])
 dates = dict_series[serie]["dates"]
 initial_components = dict_series[serie]["components"]
@@ -75,8 +81,8 @@ dates_test  = dates[len_train+1:end]
 
 distribution = "LogNormal"
 dist         = UnobservedComponentsGAS.NormalDistribution(missing, missing)
-combination  = "multiplicative3"
-combinacao   = "mult3"
+combination  = "multiplicative2"
+combinacao   = "mult2"
 
 d   = 1.0
 α   = 0.0
@@ -93,7 +99,7 @@ DICT_MODELS["LogNormal"]["ena"] = UnobservedComponentsGAS.GASModel(dist, [true, 
                                                             Dict(1=>false), Dict(1 => 2), 
                                                             Dict(1 => 12), false, stochastic, combination)
 
-DICT_MODELS["LogNormal"]["airline"] = UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false),  
+DICT_MODELS["LogNormal"]["uk_visits"] = UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false),  
                                                             Dict(1 => true),  Dict(1 => false), 
                                                             Dict(1 => 12), false, stochastic, combination)
 
@@ -179,7 +185,7 @@ savefig(path_saida*"$(serie)_quantile_residuals_acf_$(distribution).png")
 FuncoesTeste.plot_residuals_histogram(std_residuals[2:end], distribution, serie, "pearson", combinacao, d)
 savefig(path_saida*"$(serie)_residuals_histogram_$(distribution).png")
 
-FuncoesTeste.plot_residuals_histogram(std_residuals[2:end],distribution, serie, "quantile", combinacao, d)
+FuncoesTeste.plot_residuals_histogram(q_residuals[2:end],distribution, serie, "quantile", combinacao, d)
 savefig(path_saida*"$(serie)_quantile_residuals_histogram_$(distribution).png")
 
 residuals_diagnostics_05 = FuncoesTeste.get_residuals_diagnostics(std_residuals[2:end], 0.05, fitted_model)
