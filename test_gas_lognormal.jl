@@ -96,7 +96,7 @@ DICT_MODELS["LogNormal"]["carga"] = UnobservedComponentsGAS.GASModel(dist, [true
                                                         Dict(1 => 12), false, stochastic, combination)
 
 DICT_MODELS["LogNormal"]["ena"] = UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false), 
-                                                            Dict(1=>false), Dict(1 => 2), 
+                                                            Dict(1=>false), Dict(1 => 1), 
                                                             Dict(1 => 12), false, stochastic, combination)
 
 DICT_MODELS["LogNormal"]["uk_visits"] = UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false),  
