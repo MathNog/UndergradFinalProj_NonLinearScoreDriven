@@ -69,20 +69,13 @@ y_train = y[1:len_train]
 y_test  = y[len_train+1:end]
 y_ref   = y[1:len_train]
 
-# min_val = 1.1
-# max_val = 2.1
-
-# y_train = FuncoesTeste.normalize_data(y_train) #airline, carga
-# y_train = FuncoesTeste.scale_data(y_train, min_val, max_val) #ena
-# y_train = FuncoesTeste.scale_data(y_train, 0.1, 1.1) #carga
-
 dates_train = dates[1:len_train]
 dates_test  = dates[len_train+1:end]
 
 distribution = "LogNormal"
 dist         = UnobservedComponentsGAS.NormalDistribution(missing, missing)
-combination  = "multiplicative2"
-combinacao   = "mult2"
+combination  = "multiplicative3"
+combinacao   = "mult3"
 
 d   = 1.0
 α   = 0.0
@@ -96,7 +89,7 @@ DICT_MODELS["LogNormal"]["carga"] = UnobservedComponentsGAS.GASModel(dist, [true
                                                         Dict(1 => 12), false, stochastic, combination)
 
 DICT_MODELS["LogNormal"]["ena"] = UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false), 
-                                                            Dict(1=>false), Dict(1 => 1), 
+                                                            Dict(1=>false), Dict(1 => 2), 
                                                             Dict(1 => 12), false, stochastic, combination)
 
 DICT_MODELS["LogNormal"]["uk_visits"] = UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false),  
@@ -119,17 +112,6 @@ std_residuals = FuncoesTeste.get_std_residuals(y_train, fitted_model.fit_in_samp
 q_residuals   = FuncoesTeste.get_quantile_residuals(fitted_model)
 res           = y_train .- fitted_model.fit_in_sample
 forecast, dict_hyperparams_and_fitted_components = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious; combination=combination)
-
-# fitted_model.fit_in_sample = FuncoesTeste.denormalize_data(fitted_model.fit_in_sample, y_ref)
-# y_train                    = FuncoesTeste.denormalize_data(y_train, y_ref)
-# forecast["mean"]           = FuncoesTeste.denormalize_data(forecast["mean"], y_ref)
-# forecast["scenarios"]      = FuncoesTeste.denormalize_data(forecast["scenarios"], y_ref)
-
-# fitted_model.fit_in_sample[1] = y_train[1]
-# fitted_model.fit_in_sample    .= FuncoesTeste.unscale_data(fitted_model.fit_in_sample, y_ref)
-# y_train                       = FuncoesTeste.unscale_data(y_train, y_ref)
-# forecast["mean"]              = FuncoesTeste.unscale_data(forecast["mean"], y_ref)
-# forecast["scenarios"]         = FuncoesTeste.unscale_data(forecast["scenarios"], y_ref)
 
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 
