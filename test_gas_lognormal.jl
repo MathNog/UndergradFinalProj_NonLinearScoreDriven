@@ -57,7 +57,7 @@ dict_d = Dict(0.0 => "d_0", 0.5 => "d_05", 1.0 => "d_1")
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "uk_visits"
+serie = "carga"
 y     = log.(dict_series[serie]["values"])
 dates = dict_series[serie]["dates"]
 initial_components = dict_series[serie]["components"]
@@ -74,8 +74,8 @@ dates_test  = dates[len_train+1:end]
 
 distribution = "LogNormal"
 dist         = UnobservedComponentsGAS.NormalDistribution(missing, missing)
-combination  = "multiplicative3"
-combinacao   = "mult3"
+combination  = "additive"
+combinacao   = "add"
 
 d   = 1.0
 α   = 0.0
@@ -104,6 +104,9 @@ initial_values = FuncoesTeste.get_initial_values_from_components(y_train, initia
 
 fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, 
                                                         max_optimization_time=300., initial_values=initial_values);
+
+println(FuncoesTeste.get_number_parameters(fitted_model))
+
 
 fitted_model.fit_in_sample
 fitted_model.fit_in_sample[1] = y_train[1]

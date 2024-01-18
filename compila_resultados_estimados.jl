@@ -1,44 +1,151 @@
 using CSV, Plots, DataFrames, HypothesisTests, Distributions
 
 
-" Obtendo dados dos modelos estimados "
+function correct_scale(series, K, residuals)
+    SQR = sum(residuals.^2)
+    N = length(residuals)
+    σ² = SQR/(N-K)
+    return exp.(series)*exp(0.5*σ²)
+end
+
+" Definindo nomes"
 
 current_path = pwd()
-
 path_saidas = current_path * "\\Saidas\\CombNaoLinear\\SazoDeterministica\\"
+path_series =  current_path * "\\Dados\\Tratados\\"
 
-combinations = ["additive\\", "multiplicative1\\", "multiplicative2\\", "multiplicative3\\"]
-
+combinations  = ["additive\\", "multiplicative2\\", "multiplicative3\\"]
 distributions = ["LogNormal\\", "Gamma\\"]
+series        = ["ena", "carga", "uk_visits"]
 
-series = ["ena", "carga", "uk_visits"]
+nomes_series        = Dict("ena"=>"ENA", "carga"=> "carga", "uk_visits"=>"viagens")
+nomes_combinacoes   = Dict("additive"=>"ad", "multiplicative2"=>"mult1", "multiplicative3"=> "mult2")
+nomes_distribuicoes = Dict("LogNormal"=>"lognormal", "Gamma"=>"gama")
+num_parameters = Dict("ena"=>17, "carga"=>17, "uk_visits"=>17)
 
-df_fitted_values = CSV.read(path_saidas*combinations[1]*distributions[1]*"carga_fitted_values.csv", DataFrame)
+"---------------- Criando dicionario com séries -----------"
+
+dict_series = Dict()
+
+ena = CSV.read(path_series*"ena_limpo.csv", DataFrame)
+carga = CSV.read(path_series*"carga_limpo.csv", DataFrame)
+viagens = CSV.read(path_series*"uk_visits.csv", DataFrame)
+
+for (serie, nome_serie) in nomes_series
+    dict_series[nome_serie] = Dict()
+    
+end
+
+
+
+"---------------- Criando dicionario com valores estimados, residuos e previsao -----------"
 
 dict_fit_in_sample = Dict()
-dict_b = Dict()
+dict_residuos      = Dict()
+dict_std_residuos  = Dict()
+dict_q_residuos    = Dict()
+dict_forecast      = Dict()
+dict_datas_teste   = Dict()
+dict_datas_treino  = Dict()
+
 
 for combination in combinations
-    dict_fit_in_sample[combination] = Dict()
-    dict_b[combination] = Dict()
+    combination_name = nomes_combinacoes[combination[1:end-1]]
+    dict_fit_in_sample[combination_name] = Dict()
+    dict_residuos[combination_name]      = Dict()
+    dict_std_residuos[combination_name]  = Dict()
+    dict_q_residuos[combination_name]    = Dict()
+    dict_forecast[combination_name]      = Dict()
+    dict_datas_teste[combination_name]   = Dict()
+    dict_datas_treino[combination_name]  = Dict()
+
     for distribution in distributions
-        dict_fit_in_sample[combination][distribution] = Dict()
-        dict_b[combination][distribution] = Dict()
+        distribution_name = nomes_distribuicoes[distribution[1:end-1]]
+        dict_fit_in_sample[combination_name][distribution_name] = Dict()
+        dict_residuos[combination_name][distribution_name] = Dict()
+        dict_std_residuos[combination_name][distribution_name] = Dict()
+        dict_q_residuos[combination_name][distribution_name] = Dict()
+        dict_forecast[combination_name][distribution_name] = Dict()
+        dict_datas_teste[combination_name][distribution_name] = Dict()
+        dict_datas_treino[combination_name][distribution_name] = Dict()
+        
         for serie in series
-            # println(path_saidas*combination*distribution*"$(serie)_fitted_values.csv")
+            
             df_fitted_values = CSV.read(path_saidas*combination*distribution*"$(serie)_fitted_values.csv", DataFrame)
-            dict_fit_in_sample[combination][distribution][serie] = df_fitted_values[:,"fit_in_sample"]
-
-            df_params = CSV.read(path_saidas*combination*distribution*"$(serie)_params.csv", DataFrame)
-            distribution == "Gamma\\" ? param = "param_2_" : param = "param_1_"
-
-            if combination == "multiplicative3\\"
-                dict_b[combination][distribution][serie] = df_params[:, param*"b_mult"][1]
-            end 
+            dict_fit_in_sample[combination_name][distribution_name][serie] = df_fitted_values[:,"fit_in_sample"]
+            dict_residuos[combination_name][distribution_name][serie]      = df_fitted_values[:,"residuals"]
+            dict_std_residuos[combination_name][distribution_name][serie]  = df_fitted_values[:,"std_residuals"]
+            dict_q_residuos[combination_name][distribution_name][serie]    = df_fitted_values[:,"q_residuals"]
+            dict_datas_treino[combination_name][distribution_name][serie]  = df_fitted_values[:,"dates"]
+            
+            df_forecast = CSV.read(path_saidas*combination*distribution*"$(serie)_forecast_values.csv", DataFrame)
+            dict_forecast[combination_name][distribution_name][serie]      = df_forecast[:,"mean"]
+            dict_datas_teste[combination_name][distribution_name][serie]   = df_forecast[:,"dates"]
         end
     end
 end
 
+"Corrigindo a escala do fit in sample"
+
+for (combination, combination_name) in nomes_combinacoes
+    for serie in series
+        K = num_parameters[serie]
+        combination == "multiplicative3" ? K = num_parameters[serie] : K = num_parameters[serie]-1
+        dict_fit_in_sample[combination_name]["lognormal"][serie] = correct_scale(dict_fit_in_sample[combination_name]["lognormal"][serie],
+                                                                                K, dict_residuos[combination_name]["lognormal"][serie])
+    end
+end
+
+"---------------- Criando dicionario com parametros estimados -----------"
+dict_params_carga   = Dict()
+dict_params_ena     = Dict()
+dict_params_viagens = Dict()
+
+for combination in combinations
+    combination_name = nomes_combinacoes[combination[1:end-1]]
+    dict_params_carga[combination_name]   = Dict()
+    dict_params_ena[combination_name]     = Dict()
+    dict_params_viagens[combination_name] = Dict()
+
+    
+    for distribution in distributions
+        distribution_name = nomes_distribuicoes[distribution[1:end-1]]
+        distribution == "Gamma\\" ? param = "param_2_" : param = "param_1_"
+
+        dict_params_carga[combination_name][distribution_name]   = Dict()
+        dict_params_ena[combination_name][distribution_name]     = Dict()
+        dict_params_viagens[combination_name][distribution_name] = Dict()
+
+        df_params_carga   = CSV.read(path_saidas*combination*distribution*"carga_params.csv", DataFrame)
+        df_params_ena     = CSV.read(path_saidas*combination*distribution*"ena_params.csv", DataFrame)
+        df_params_viagens = CSV.read(path_saidas*combination*distribution*"uk_visits_params.csv", DataFrame)
+
+        dict_params_carga[combination_name][distribution_name]["κ_level"] = df_params_carga[:,param*"level_κ"]
+        dict_params_carga[combination_name][distribution_name]["κ_slope"] = df_params_carga[:,param*"slope_κ"]
+        dict_params_carga[combination_name][distribution_name]["ϕ_slope"] = df_params_carga[:,param*"slope_ϕb"]
+        dict_params_carga[combination_name][distribution_name]["b_mult"] = df_params_carga[:,param*"b_mult"]
+
+        dict_params_ena[combination_name][distribution_name]["κ_ar"] = df_params_ena[:,param*"ar_κ"]
+        dict_params_ena[combination_name][distribution_name]["ϕ_ar"] = df_params_ena[:,param*"ar_ϕ"]
+        dict_params_ena[combination_name][distribution_name]["b_mult"] = df_params_ena[:,param*"b_mult"]
+        
+        dict_params_viagens[combination_name][distribution_name]["κ_level"] = df_params_viagens[:,param*"level_κ"]
+        dict_params_viagens[combination_name][distribution_name]["κ_slope"] = df_params_viagens[:,param*"slope_κ"]
+        dict_params_viagens[combination_name][distribution_name]["ϕ_slope"] = df_params_viagens[:,param*"slope_ϕb"]
+        dict_params_viagens[combination_name][distribution_name]["b_mult"] = df_params_viagens[:,param*"b_mult"] 
+    end
+end
+
+
+" ------------ Criando gráficos de fit in sample, residuos, fac e previsao ---------------"
+
+serie = "ena"
+
+p_add_ln   = plot(dict_datas_treino["ad"]["lognormal"][serie], dict_fit_in_sample["ad"]["lognormal"][serie])
+
+
+
+"---------------- Criando gráficos de dispersão -----------"
 
 for serie in series
     for distribution in distributions
@@ -58,12 +165,3 @@ for serie in series
     end
 end    
 
-
-for distribution in distributions
-    b = dict_b["multiplicative3\\"][distribution]
-
-    println(distribution)
-    println("carga     -> ",b["carga"])
-    println("ena       -> ", b["ena"])
-    println("uk_visits -> ", b["uk_visits"])
-end
