@@ -1,17 +1,97 @@
-,serie,distrib,comb,JB,LB,ARCH
-0,ena,LogNormal,additive,0.428727480178078,1.516253137679588e-05,0.0047770734960424
-1,ena,LogNormal,multiplicative1,0.1013904334771591,1.2740133734913216e-24,0.0560778111876941
-2,ena,LogNormal,multiplicative2,0.0109546422488071,8.213180691233512e-39,2.651396557597556e-06
-3,ena,LogNormal,multiplicative3,0.2343238374699159,8.451983248637047e-06,0.0048255591750034
-4,ena,Gamma,additive,0.5920076617622063,0.0001550372094157,0.1331028334581378
-5,ena,Gamma,multiplicative1,0.1095530387660158,9.89969772918694e-41,1.5671443265777189e-06
-6,ena,Gamma,multiplicative2,0.0123037967691051,1.356276380699254e-06,0.0318930765368968
-7,ena,Gamma,multiplicative3,0.0132138545305438,3.152251374260648e-06,0.0417934338558104
-8,carga,LogNormal,additive,9.310271297259392e-05,0.0005088678695347,0.0030674927974104
-9,carga,LogNormal,multiplicative1,9.329666309903427e-09,9.547359114554914e-71,2.9422460798547093e-07
-10,carga,LogNormal,multiplicative2,3.578881870373749e-06,2.2285048207177677e-06,0.0338029538069533
-11,carga,LogNormal,multiplicative3,0.0001161146524333,0.0001280280142475,0.0026010571873951
-12,carga,Gamma,additive,0.0005575538161832,1.3883214068855382e-05,0.0014441678480901
-13,carga,Gamma,multiplicative1,5.697076139082431e-96,1.0243395580535644e-44,5.120876868535656e-19
-14,carga,Gamma,multiplicative2,3.449900880689385e-07,3.042238635311519e-05,0.0367193026566362
-15,carga,Gamma,multiplicative3,0.0924352224964879,1.2680334174598537e-43,0.0464531836863175
+,serie,distrib,comb,teste,pvalor,rejeicao
+0,ena,LogNormal,additive,Jarque Bera,0.0059,Rejeita H0
+1,ena,LogNormal,additive,H,0.6147,Não rejeita H0
+2,ena,LogNormal,additive,ARCHLM,0.0127,Rejeita H0
+3,ena,LogNormal,additive,Ljung Box,0.0199,Rejeita H0
+4,ena,LogNormal,multiplicative1,Jarque Bera,0.0449,Rejeita H0
+5,ena,LogNormal,multiplicative1,H,0.2807,Não rejeita H0
+6,ena,LogNormal,multiplicative1,ARCHLM,0.0,Rejeita H0
+7,ena,LogNormal,multiplicative1,Ljung Box,0.0,Rejeita H0
+8,ena,LogNormal,multiplicative2,Jarque Bera,0.0106,Rejeita H0
+9,ena,LogNormal,multiplicative2,H,0.4152,Não rejeita H0
+10,ena,LogNormal,multiplicative2,ARCHLM,0.0,Rejeita H0
+11,ena,LogNormal,multiplicative2,Ljung Box,0.0,Rejeita H0
+12,ena,LogNormal,multiplicative3,Jarque Bera,0.2343,Não rejeita H0
+13,ena,LogNormal,multiplicative3,H,0.7315,Não rejeita H0
+14,ena,LogNormal,multiplicative3,ARCHLM,0.0048,Rejeita H0
+15,ena,LogNormal,multiplicative3,Ljung Box,0.0,Rejeita H0
+16,ena,Gamma,additive,Jarque Bera,0.592,Não rejeita H0
+17,ena,Gamma,additive,H,0.898,Não rejeita H0
+18,ena,Gamma,additive,ARCHLM,0.1331,Não rejeita H0
+19,ena,Gamma,additive,Ljung Box,0.0002,Rejeita H0
+20,ena,Gamma,multiplicative1,Jarque Bera,0.1078,Não rejeita H0
+21,ena,Gamma,multiplicative1,H,0.475,Não rejeita H0
+22,ena,Gamma,multiplicative1,ARCHLM,0.0,Rejeita H0
+23,ena,Gamma,multiplicative1,Ljung Box,0.0,Rejeita H0
+24,ena,Gamma,multiplicative2,Jarque Bera,0.0117,Rejeita H0
+25,ena,Gamma,multiplicative2,H,0.2687,Não rejeita H0
+26,ena,Gamma,multiplicative2,ARCHLM,0.0284,Rejeita H0
+27,ena,Gamma,multiplicative2,Ljung Box,0.0,Rejeita H0
+28,ena,Gamma,multiplicative3,Jarque Bera,0.0132,Rejeita H0
+29,ena,Gamma,multiplicative3,H,0.6313,Não rejeita H0
+30,ena,Gamma,multiplicative3,ARCHLM,0.0418,Rejeita H0
+31,ena,Gamma,multiplicative3,Ljung Box,0.0,Rejeita H0
+32,carga,LogNormal,additive,Jarque Bera,0.0001,Rejeita H0
+33,carga,LogNormal,additive,H,0.2344,Não rejeita H0
+34,carga,LogNormal,additive,ARCHLM,0.0031,Rejeita H0
+35,carga,LogNormal,additive,Ljung Box,0.0005,Rejeita H0
+36,carga,LogNormal,multiplicative1,Jarque Bera,0.0065,Rejeita H0
+37,carga,LogNormal,multiplicative1,H,0.0004,Rejeita H0
+38,carga,LogNormal,multiplicative1,ARCHLM,0.0,Rejeita H0
+39,carga,LogNormal,multiplicative1,Ljung Box,0.0,Rejeita H0
+40,carga,LogNormal,multiplicative2,Jarque Bera,0.022,Rejeita H0
+41,carga,LogNormal,multiplicative2,H,0.0314,Rejeita H0
+42,carga,LogNormal,multiplicative2,ARCHLM,0.0693,Não rejeita H0
+43,carga,LogNormal,multiplicative2,Ljung Box,0.0,Rejeita H0
+44,carga,LogNormal,multiplicative3,Jarque Bera,0.0001,Rejeita H0
+45,carga,LogNormal,multiplicative3,H,0.1783,Não rejeita H0
+46,carga,LogNormal,multiplicative3,ARCHLM,0.0026,Rejeita H0
+47,carga,LogNormal,multiplicative3,Ljung Box,0.0001,Rejeita H0
+48,carga,Gamma,additive,Jarque Bera,0.0006,Rejeita H0
+49,carga,Gamma,additive,H,0.1541,Não rejeita H0
+50,carga,Gamma,additive,ARCHLM,0.0014,Rejeita H0
+51,carga,Gamma,additive,Ljung Box,0.0,Rejeita H0
+52,carga,Gamma,multiplicative1,Jarque Bera,0.0004,Rejeita H0
+53,carga,Gamma,multiplicative1,H,0.0,Rejeita H0
+54,carga,Gamma,multiplicative1,ARCHLM,0.0,Rejeita H0
+55,carga,Gamma,multiplicative1,Ljung Box,0.0,Rejeita H0
+56,carga,Gamma,multiplicative2,Jarque Bera,0.0,Rejeita H0
+57,carga,Gamma,multiplicative2,H,0.0086,Rejeita H0
+58,carga,Gamma,multiplicative2,ARCHLM,0.0367,Rejeita H0
+59,carga,Gamma,multiplicative2,Ljung Box,0.0,Rejeita H0
+60,carga,Gamma,multiplicative3,Jarque Bera,0.0,Rejeita H0
+61,carga,Gamma,multiplicative3,H,0.1043,Não rejeita H0
+62,carga,Gamma,multiplicative3,ARCHLM,0.0049,Rejeita H0
+63,carga,Gamma,multiplicative3,Ljung Box,0.0069,Rejeita H0
+64,uk_visits,LogNormal,additive,Jarque Bera,0.5418,Não rejeita H0
+65,uk_visits,LogNormal,additive,H,0.661,Não rejeita H0
+66,uk_visits,LogNormal,additive,ARCHLM,0.0318,Rejeita H0
+67,uk_visits,LogNormal,additive,Ljung Box,0.0,Rejeita H0
+68,uk_visits,LogNormal,multiplicative1,Jarque Bera,0.0002,Rejeita H0
+69,uk_visits,LogNormal,multiplicative1,H,0.0725,Não rejeita H0
+70,uk_visits,LogNormal,multiplicative1,ARCHLM,0.0,Rejeita H0
+71,uk_visits,LogNormal,multiplicative1,Ljung Box,0.0,Rejeita H0
+72,uk_visits,LogNormal,multiplicative2,Jarque Bera,0.9279,Não rejeita H0
+73,uk_visits,LogNormal,multiplicative2,H,0.0309,Rejeita H0
+74,uk_visits,LogNormal,multiplicative2,ARCHLM,0.0,Rejeita H0
+75,uk_visits,LogNormal,multiplicative2,Ljung Box,0.0,Rejeita H0
+76,uk_visits,LogNormal,multiplicative3,Jarque Bera,0.6738,Não rejeita H0
+77,uk_visits,LogNormal,multiplicative3,H,0.5436,Não rejeita H0
+78,uk_visits,LogNormal,multiplicative3,ARCHLM,0.1025,Não rejeita H0
+79,uk_visits,LogNormal,multiplicative3,Ljung Box,0.0,Rejeita H0
+80,uk_visits,Gamma,additive,Jarque Bera,0.6212,Não rejeita H0
+81,uk_visits,Gamma,additive,H,0.5388,Não rejeita H0
+82,uk_visits,Gamma,additive,ARCHLM,0.0679,Não rejeita H0
+83,uk_visits,Gamma,additive,Ljung Box,0.0,Rejeita H0
+84,uk_visits,Gamma,multiplicative1,Jarque Bera,0.0,Rejeita H0
+85,uk_visits,Gamma,multiplicative1,H,0.0,Rejeita H0
+86,uk_visits,Gamma,multiplicative1,ARCHLM,0.0,Rejeita H0
+87,uk_visits,Gamma,multiplicative1,Ljung Box,0.0,Rejeita H0
+88,uk_visits,Gamma,multiplicative2,Jarque Bera,0.2171,Não rejeita H0
+89,uk_visits,Gamma,multiplicative2,H,0.4699,Não rejeita H0
+90,uk_visits,Gamma,multiplicative2,ARCHLM,0.0,Rejeita H0
+91,uk_visits,Gamma,multiplicative2,Ljung Box,0.0,Rejeita H0
+92,uk_visits,Gamma,multiplicative3,Jarque Bera,0.309,Não rejeita H0
+93,uk_visits,Gamma,multiplicative3,H,0.4512,Não rejeita H0
+94,uk_visits,Gamma,multiplicative3,ARCHLM,0.0294,Rejeita H0
+95,uk_visits,Gamma,multiplicative3,Ljung Box,0.0,Rejeita H0

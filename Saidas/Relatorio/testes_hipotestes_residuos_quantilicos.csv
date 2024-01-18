@@ -1,0 +1,97 @@
+serie,distrib,comb,teste,pvalor,rejeicao
+ena,LogNormal,additive,Jarque Bera,0.0059,Rejeita H0
+ena,LogNormal,additive,H,0.6147,Não rejeita H0
+ena,LogNormal,additive,ARCHLM,0.0127,Rejeita H0
+ena,LogNormal,additive,Ljung Box,0.0199,Rejeita H0
+ena,LogNormal,multiplicative1,Jarque Bera,0.0449,Rejeita H0
+ena,LogNormal,multiplicative1,H,0.2807,Não rejeita H0
+ena,LogNormal,multiplicative1,ARCHLM,0.0,Rejeita H0
+ena,LogNormal,multiplicative1,Ljung Box,0.0,Rejeita H0
+ena,LogNormal,multiplicative2,Jarque Bera,0.0106,Rejeita H0
+ena,LogNormal,multiplicative2,H,0.4152,Não rejeita H0
+ena,LogNormal,multiplicative2,ARCHLM,0.0,Rejeita H0
+ena,LogNormal,multiplicative2,Ljung Box,0.0,Rejeita H0
+ena,LogNormal,multiplicative3,Jarque Bera,0.2343,Não rejeita H0
+ena,LogNormal,multiplicative3,H,0.7315,Não rejeita H0
+ena,LogNormal,multiplicative3,ARCHLM,0.0048,Rejeita H0
+ena,LogNormal,multiplicative3,Ljung Box,0.0,Rejeita H0
+ena,Gamma,additive,Jarque Bera,0.592,Não rejeita H0
+ena,Gamma,additive,H,0.898,Não rejeita H0
+ena,Gamma,additive,ARCHLM,0.1331,Não rejeita H0
+ena,Gamma,additive,Ljung Box,0.0002,Rejeita H0
+ena,Gamma,multiplicative1,Jarque Bera,0.1078,Não rejeita H0
+ena,Gamma,multiplicative1,H,0.475,Não rejeita H0
+ena,Gamma,multiplicative1,ARCHLM,0.0,Rejeita H0
+ena,Gamma,multiplicative1,Ljung Box,0.0,Rejeita H0
+ena,Gamma,multiplicative2,Jarque Bera,0.0117,Rejeita H0
+ena,Gamma,multiplicative2,H,0.2687,Não rejeita H0
+ena,Gamma,multiplicative2,ARCHLM,0.0284,Rejeita H0
+ena,Gamma,multiplicative2,Ljung Box,0.0,Rejeita H0
+ena,Gamma,multiplicative3,Jarque Bera,0.0132,Rejeita H0
+ena,Gamma,multiplicative3,H,0.6313,Não rejeita H0
+ena,Gamma,multiplicative3,ARCHLM,0.0418,Rejeita H0
+ena,Gamma,multiplicative3,Ljung Box,0.0,Rejeita H0
+carga,LogNormal,additive,Jarque Bera,0.0001,Rejeita H0
+carga,LogNormal,additive,H,0.2344,Não rejeita H0
+carga,LogNormal,additive,ARCHLM,0.0031,Rejeita H0
+carga,LogNormal,additive,Ljung Box,0.0005,Rejeita H0
+carga,LogNormal,multiplicative1,Jarque Bera,0.0065,Rejeita H0
+carga,LogNormal,multiplicative1,H,0.0004,Rejeita H0
+carga,LogNormal,multiplicative1,ARCHLM,0.0,Rejeita H0
+carga,LogNormal,multiplicative1,Ljung Box,0.0,Rejeita H0
+carga,LogNormal,multiplicative2,Jarque Bera,0.022,Rejeita H0
+carga,LogNormal,multiplicative2,H,0.0314,Rejeita H0
+carga,LogNormal,multiplicative2,ARCHLM,0.0693,Não rejeita H0
+carga,LogNormal,multiplicative2,Ljung Box,0.0,Rejeita H0
+carga,LogNormal,multiplicative3,Jarque Bera,0.0001,Rejeita H0
+carga,LogNormal,multiplicative3,H,0.1783,Não rejeita H0
+carga,LogNormal,multiplicative3,ARCHLM,0.0026,Rejeita H0
+carga,LogNormal,multiplicative3,Ljung Box,0.0001,Rejeita H0
+carga,Gamma,additive,Jarque Bera,0.0006,Rejeita H0
+carga,Gamma,additive,H,0.1541,Não rejeita H0
+carga,Gamma,additive,ARCHLM,0.0014,Rejeita H0
+carga,Gamma,additive,Ljung Box,0.0,Rejeita H0
+carga,Gamma,multiplicative1,Jarque Bera,0.0004,Rejeita H0
+carga,Gamma,multiplicative1,H,0.0,Rejeita H0
+carga,Gamma,multiplicative1,ARCHLM,0.0,Rejeita H0
+carga,Gamma,multiplicative1,Ljung Box,0.0,Rejeita H0
+carga,Gamma,multiplicative2,Jarque Bera,0.0,Rejeita H0
+carga,Gamma,multiplicative2,H,0.0086,Rejeita H0
+carga,Gamma,multiplicative2,ARCHLM,0.0367,Rejeita H0
+carga,Gamma,multiplicative2,Ljung Box,0.0,Rejeita H0
+carga,Gamma,multiplicative3,Jarque Bera,0.0,Rejeita H0
+carga,Gamma,multiplicative3,H,0.1043,Não rejeita H0
+carga,Gamma,multiplicative3,ARCHLM,0.0049,Rejeita H0
+carga,Gamma,multiplicative3,Ljung Box,0.0069,Rejeita H0
+uk_visits,LogNormal,additive,Jarque Bera,0.5418,Não rejeita H0
+uk_visits,LogNormal,additive,H,0.661,Não rejeita H0
+uk_visits,LogNormal,additive,ARCHLM,0.0318,Rejeita H0
+uk_visits,LogNormal,additive,Ljung Box,0.0,Rejeita H0
+uk_visits,LogNormal,multiplicative1,Jarque Bera,0.0002,Rejeita H0
+uk_visits,LogNormal,multiplicative1,H,0.0725,Não rejeita H0
+uk_visits,LogNormal,multiplicative1,ARCHLM,0.0,Rejeita H0
+uk_visits,LogNormal,multiplicative1,Ljung Box,0.0,Rejeita H0
+uk_visits,LogNormal,multiplicative2,Jarque Bera,0.9279,Não rejeita H0
+uk_visits,LogNormal,multiplicative2,H,0.0309,Rejeita H0
+uk_visits,LogNormal,multiplicative2,ARCHLM,0.0,Rejeita H0
+uk_visits,LogNormal,multiplicative2,Ljung Box,0.0,Rejeita H0
+uk_visits,LogNormal,multiplicative3,Jarque Bera,0.6738,Não rejeita H0
+uk_visits,LogNormal,multiplicative3,H,0.5436,Não rejeita H0
+uk_visits,LogNormal,multiplicative3,ARCHLM,0.1025,Não rejeita H0
+uk_visits,LogNormal,multiplicative3,Ljung Box,0.0,Rejeita H0
+uk_visits,Gamma,additive,Jarque Bera,0.6212,Não rejeita H0
+uk_visits,Gamma,additive,H,0.5388,Não rejeita H0
+uk_visits,Gamma,additive,ARCHLM,0.0679,Não rejeita H0
+uk_visits,Gamma,additive,Ljung Box,0.0,Rejeita H0
+uk_visits,Gamma,multiplicative1,Jarque Bera,0.0,Rejeita H0
+uk_visits,Gamma,multiplicative1,H,0.0,Rejeita H0
+uk_visits,Gamma,multiplicative1,ARCHLM,0.0,Rejeita H0
+uk_visits,Gamma,multiplicative1,Ljung Box,0.0,Rejeita H0
+uk_visits,Gamma,multiplicative2,Jarque Bera,0.2171,Não rejeita H0
+uk_visits,Gamma,multiplicative2,H,0.4699,Não rejeita H0
+uk_visits,Gamma,multiplicative2,ARCHLM,0.0,Rejeita H0
+uk_visits,Gamma,multiplicative2,Ljung Box,0.0,Rejeita H0
+uk_visits,Gamma,multiplicative3,Jarque Bera,0.309,Não rejeita H0
+uk_visits,Gamma,multiplicative3,H,0.4512,Não rejeita H0
+uk_visits,Gamma,multiplicative3,ARCHLM,0.0294,Rejeita H0
+uk_visits,Gamma,multiplicative3,Ljung Box,0.0,Rejeita H0
