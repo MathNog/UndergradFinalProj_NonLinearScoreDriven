@@ -1,0 +1,7 @@
+combinacao,distribuicao,κ_slope,κ_level,ϕ_slope,b_mult
+ad,lognormal,0.001,0.64985,0.9,Inf
+ad,gama,0.001,0.7526,0.9,Inf
+mult1,lognormal,0.001,0.84966,0.9,Inf
+mult1,gama,0.001,0.32858,0.99544,Inf
+mult2,lognormal,0.001,0.65894,0.9,-0.3162
+mult2,gama,0.001,0.50603,0.9,9.0e-5
