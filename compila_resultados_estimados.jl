@@ -64,6 +64,8 @@ dict_forecast      = Dict()
 dict_datas_teste   = Dict()
 dict_datas_treino  = Dict()
 
+dict_testes_hipotese = Dict()
+dict_mapes           = Dict()
 
 for combination in combinations
     combination_name = nomes_combinacoes[combination[1:end-1]]
@@ -75,6 +77,9 @@ for combination in combinations
     dict_datas_teste[combination_name]   = Dict()
     dict_datas_treino[combination_name]  = Dict()
 
+    dict_testes_hipotese[combination_name]   = Dict()
+    dict_mapes[combination_name]  = Dict()
+
     for distribution in distributions
         distribution_name = nomes_distribuicoes[distribution[1:end-1]]
         dict_fit_in_sample[combination_name][distribution_name] = Dict()
@@ -84,6 +89,9 @@ for combination in combinations
         dict_forecast[combination_name][distribution_name] = Dict()
         dict_datas_teste[combination_name][distribution_name] = Dict()
         dict_datas_treino[combination_name][distribution_name] = Dict()
+
+        dict_testes_hipotese[combination_name][distribution_name]   = Dict()
+        dict_mapes[combination_name][distribution_name]  = Dict()
         
         for serie in series
             
@@ -97,6 +105,12 @@ for combination in combinations
             df_forecast = CSV.read(path_dados*combination*distribution*"$(serie)_forecast_values.csv", DataFrame)
             dict_forecast[combination_name][distribution_name][serie]      = df_forecast[:,"mean"]
             dict_datas_teste[combination_name][distribution_name][serie]   = df_forecast[:,"dates"]
+
+            df_testes = CSV.read(path_dados*combination*distribution*"$(serie)_residuals_diagnostics_05.csv", DataFrame)
+            dict_testes_hipotese[combination_name][distribution_name][serie] = df_testes
+
+            df_mapes = CSV.read(path_dados*combination*distribution*"$(serie)_mapes.csv", DataFrame)
+            dict_mapes[combination_name][distribution_name][serie] = df_mapes
         end
     end
 end
@@ -157,6 +171,7 @@ for combination in combinations
 end
 
 
+
 " ------------ Criando gráficos de fit in sample, residuos, fac e previsao ---------------"
 
 
@@ -176,6 +191,10 @@ for serie in series
             plot!(dict_series[serie]["datas_teste"], dict_series[serie]["serie_teste"], label="Série")
             plot!(dict_datas_teste[combination_name][distribution_name][serie], dict_forecast[combination_name][distribution_name][serie], label="Previsão", color="red")
             savefig(path_saida*"\\ResultadosIndividuais\\$(combination_name)\\$(distribution)\\$(serie)_forecast_$(distribution).png")
+
+            plot(title="Resíduos Quantílicos - $(nomes_series[serie]) - $(distribution_name) - $(combination_name)")
+            plot!(dict_datas_treino[combination_name][distribution_name][serie][3:end], dict_q_residuos[combination_name][distribution_name][serie][3:end],label="")
+            savefig(path_saida*"\\ResultadosIndividuais\\$(combination_name)\\$(distribution)\\$(serie)_quantile_residuals_$(distribution).png")
 
             res = dict_q_residuos[combination_name][distribution_name][serie][2:end]
             acf_values = autocor(res)[1:15]
@@ -232,24 +251,71 @@ col_comb = []
 col_distrib = []
 df_params_ena = DataFrame([col => [] for col in colunas])
 for (combination, combination_name) in nomes_combinacoes
+    @info combination_name
     df_ln = DataFrame(dict_params_ena[combination_name]["lognormal"])
     df_g = DataFrame(dict_params_ena[combination_name]["gama"])
     col_comb = vcat(col_comb, [combination_name, combination_name])
     col_distrib = vcat(col_distrib, ["lognormal", "gama"])
     df_params_ena = vcat(df_params_ena, vcat(df_ln, df_g))
 end
-
-#Entender porque está vindo uma linha a mais
+df_params_ena = df_params_ena[[1,2,3,4,5,7],:]
 df_params_ena = round.(df_params_ena, digits=5)
 
 df_params_ena = hcat(DataFrame("combinacao"=>col_comb, "distribuicao"=>col_distrib), df_params_ena)
-CSV.write(path_saida*"Resultados\\params_viagens.csv", df_params_carga)
+CSV.write(path_saida*"Resultados\\params_ena.csv", df_params_carga)
 
 
 " ---------------- Criando arquivos de testes de hipoteses -------------------"
 
+df_testes = ones(0,3)
+
+col_comb    = []
+col_distrib = []
+col_serie   = []
+
+for (combination, combination_name) in nomes_combinacoes
+    for (distribution, distribution_name) in nomes_distribuicoes
+        for serie in series
+            col_comb = vcat(col_comb, [combination_name, combination_name, combination_name, combination_name])
+            col_distrib = vcat(col_distrib, [distribution_name, distribution_name, distribution_name, distribution_name])
+            col_serie = vcat(col_serie, [serie, serie, serie, serie])
+            df_testes = vcat(df_testes, Matrix(dict_testes_hipotese[combination_name][distribution_name][serie][:, ["Teste", "pvalor", "Rejeicao"]]))
+        end
+    end
+end
+df_testes[:,2] = round.(df_testes[:,2], digits=5)
+df_testes = hcat(col_comb, col_distrib, col_serie, df_testes)
+df_testes = DataFrame(df_testes, :auto)
+rename!(df_testes, ["combinacao", "distribuicao", "serie", "teste", "pvalor", "rejeicao"])
+replace!(df_testes.serie, "uk_visits"=>"viagens")
+CSV.write(path_saida*"Resultados\\testes_hipoteses_05.csv", df_testes)
 
 " ---------------- Criando arquivos de mapes -------------------"
+
+df_mapes = ones(0,2)
+
+col_comb    = []
+col_distrib = []
+col_serie   = []
+
+for (combination, combination_name) in nomes_combinacoes
+    for (distribution, distribution_name) in nomes_distribuicoes
+        for serie in series
+            col_serie = vcat(col_serie, serie)
+            col_comb = vcat(col_comb, combination_name)
+            col_distrib = vcat(col_distrib, distribution_name)
+            df_mapes = vcat(df_mapes, Matrix(dict_mapes[combination_name][distribution_name][serie][:, ["MAPE Treino", "MAPE Teste"]]))
+        end
+    end
+end
+df_mapes = round.(df_mapes, digits=5)
+df_mapes = hcat(col_comb, col_distrib, col_serie, df_mapes)
+df_mapes = DataFrame(df_mapes, :auto)
+rename!(df_mapes, ["combinacao", "distribuicao", "serie", "MAPE Treino", "MAPE Teste"])
+replace!(df_mapes.serie, "uk_visits"=>"viagens")
+CSV.write(path_saida*"Resultados\\mapes.csv", df_mapes)
+
+
 
 
 # "---------------- Criando gráficos de dispersão -----------"

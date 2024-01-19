@@ -1,0 +1,73 @@
+combinacao,distribuicao,serie,teste,pvalor,rejeicao
+ad,lognormal,ena,Jarque Bera,0.00588,Rejeita H₀
+ad,lognormal,ena,H,0.61466,Não rejeita H₀
+ad,lognormal,ena,ARCHLM,0.01272,Rejeita H₀
+ad,lognormal,ena,Ljung Box,0.0199,Rejeita H₀
+ad,lognormal,carga,Jarque Bera,9.0e-5,Rejeita H₀
+ad,lognormal,carga,H,0.23441,Não rejeita H₀
+ad,lognormal,carga,ARCHLM,0.00307,Rejeita H₀
+ad,lognormal,carga,Ljung Box,0.00051,Rejeita H₀
+ad,lognormal,viagens,Jarque Bera,0.54184,Não rejeita H₀
+ad,lognormal,viagens,H,0.66097,Não rejeita H₀
+ad,lognormal,viagens,ARCHLM,0.03185,Rejeita H₀
+ad,lognormal,viagens,Ljung Box,0.0,Rejeita H₀
+ad,gama,ena,Jarque Bera,0.00036,Rejeita H₀
+ad,gama,ena,H,0.98337,Não rejeita H₀
+ad,gama,ena,ARCHLM,0.64425,Não rejeita H₀
+ad,gama,ena,Ljung Box,0.00031,Rejeita H₀
+ad,gama,carga,Jarque Bera,8.0e-5,Rejeita H₀
+ad,gama,carga,H,0.15717,Não rejeita H₀
+ad,gama,carga,ARCHLM,0.00067,Rejeita H₀
+ad,gama,carga,Ljung Box,1.0e-5,Rejeita H₀
+ad,gama,viagens,Jarque Bera,0.15455,Não rejeita H₀
+ad,gama,viagens,H,0.4695,Não rejeita H₀
+ad,gama,viagens,ARCHLM,0.08907,Não rejeita H₀
+ad,gama,viagens,Ljung Box,0.0,Rejeita H₀
+mult1,lognormal,ena,Jarque Bera,0.01058,Rejeita H₀
+mult1,lognormal,ena,H,0.41516,Não rejeita H₀
+mult1,lognormal,ena,ARCHLM,0.0,Rejeita H₀
+mult1,lognormal,ena,Ljung Box,0.0,Rejeita H₀
+mult1,lognormal,carga,Jarque Bera,0.02205,Rejeita H₀
+mult1,lognormal,carga,H,0.03145,Rejeita H₀
+mult1,lognormal,carga,ARCHLM,0.06933,Não rejeita H₀
+mult1,lognormal,carga,Ljung Box,0.0,Rejeita H₀
+mult1,lognormal,viagens,Jarque Bera,0.9279,Não rejeita H₀
+mult1,lognormal,viagens,H,0.03089,Rejeita H₀
+mult1,lognormal,viagens,ARCHLM,0.0,Rejeita H₀
+mult1,lognormal,viagens,Ljung Box,0.0,Rejeita H₀
+mult1,gama,ena,Jarque Bera,0.0,Rejeita H₀
+mult1,gama,ena,H,0.34609,Não rejeita H₀
+mult1,gama,ena,ARCHLM,0.17925,Não rejeita H₀
+mult1,gama,ena,Ljung Box,0.0,Rejeita H₀
+mult1,gama,carga,Jarque Bera,0.0,Rejeita H₀
+mult1,gama,carga,H,0.01138,Rejeita H₀
+mult1,gama,carga,ARCHLM,0.03249,Rejeita H₀
+mult1,gama,carga,Ljung Box,4.0e-5,Rejeita H₀
+mult1,gama,viagens,Jarque Bera,0.00199,Rejeita H₀
+mult1,gama,viagens,H,0.53103,Não rejeita H₀
+mult1,gama,viagens,ARCHLM,0.0,Rejeita H₀
+mult1,gama,viagens,Ljung Box,0.0,Rejeita H₀
+mult2,lognormal,ena,Jarque Bera,0.23432,Não rejeita H₀
+mult2,lognormal,ena,H,0.73154,Não rejeita H₀
+mult2,lognormal,ena,ARCHLM,0.00483,Rejeita H₀
+mult2,lognormal,ena,Ljung Box,1.0e-5,Rejeita H₀
+mult2,lognormal,carga,Jarque Bera,0.00012,Rejeita H₀
+mult2,lognormal,carga,H,0.17833,Não rejeita H₀
+mult2,lognormal,carga,ARCHLM,0.0026,Rejeita H₀
+mult2,lognormal,carga,Ljung Box,0.00013,Rejeita H₀
+mult2,lognormal,viagens,Jarque Bera,0.67381,Não rejeita H₀
+mult2,lognormal,viagens,H,0.54364,Não rejeita H₀
+mult2,lognormal,viagens,ARCHLM,0.10249,Não rejeita H₀
+mult2,lognormal,viagens,Ljung Box,0.0,Rejeita H₀
+mult2,gama,ena,Jarque Bera,0.0,Rejeita H₀
+mult2,gama,ena,H,0.79437,Não rejeita H₀
+mult2,gama,ena,ARCHLM,0.3931,Não rejeita H₀
+mult2,gama,ena,Ljung Box,1.0e-5,Rejeita H₀
+mult2,gama,carga,Jarque Bera,0.0,Rejeita H₀
+mult2,gama,carga,H,0.11224,Não rejeita H₀
+mult2,gama,carga,ARCHLM,0.00282,Rejeita H₀
+mult2,gama,carga,Ljung Box,0.00687,Rejeita H₀
+mult2,gama,viagens,Jarque Bera,0.03195,Rejeita H₀
+mult2,gama,viagens,H,0.3648,Não rejeita H₀
+mult2,gama,viagens,ARCHLM,0.05162,Não rejeita H₀
+mult2,gama,viagens,Ljung Box,0.0,Rejeita H₀
