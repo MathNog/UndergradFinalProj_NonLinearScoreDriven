@@ -225,9 +225,11 @@ for (combination, combination_name) in nomes_combinacoes
 end
 
 df_params_carga = round.(df_params_carga, digits=5)
-
 df_params_carga = hcat(DataFrame("combinacao"=>col_comb, "distribuicao"=>col_distrib), df_params_carga)
+rename!(df_params_carga, replace.(names(df_params_carga),"κ"=>"kappa"))
+rename!(df_params_carga, replace.(names(df_params_carga),"ϕ"=>"phi"))
 CSV.write(path_saida*"Resultados\\params_carga.csv", df_params_carga)
+
 
 colunas = ["κ_slope", "κ_level", "ϕ_slope", "b_mult"]
 col_comb = []
@@ -242,6 +244,8 @@ for (combination, combination_name) in nomes_combinacoes
 end
 df_params_viagens = round.(df_params_viagens, digits=5)
 df_params_viagens = hcat(DataFrame("combinacao"=>col_comb, "distribuicao"=>col_distrib), df_params_viagens)
+rename!(df_params_viagens, replace.(names(df_params_viagens),"κ"=>"kappa"))
+rename!(df_params_viagens, replace.(names(df_params_viagens),"ϕ"=>"phi"))
 CSV.write(path_saida*"Resultados\\params_viagens.csv", df_params_viagens)
 
 
@@ -260,9 +264,10 @@ for (combination, combination_name) in nomes_combinacoes
 end
 df_params_ena = df_params_ena[[1,2,3,4,5,7],:]
 df_params_ena = round.(df_params_ena, digits=5)
-
 df_params_ena = hcat(DataFrame("combinacao"=>col_comb, "distribuicao"=>col_distrib), df_params_ena)
-CSV.write(path_saida*"Resultados\\params_ena.csv", df_params_carga)
+rename!(df_params_ena, replace.(names(df_params_ena),"κ"=>"kappa"))
+rename!(df_params_ena, replace.(names(df_params_ena),"ϕ"=>"phi"))
+CSV.write(path_saida*"Resultados\\params_ena.csv", df_params_ena)
 
 
 " ---------------- Criando arquivos de testes de hipoteses -------------------"

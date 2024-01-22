@@ -10,7 +10,7 @@ mult1,lognormal,carga,2.37,3.31
 mult1,lognormal,viagens,12.55,21.48
 mult1,gama,ena,16.81,23.68
 mult1,gama,carga,2.11,4.77
-mult1,gama,viagens,18.3,8864.01
+mult1,gama,viagens,6.99,7.77
 mult2,lognormal,ena,16.35,22.26
 mult2,lognormal,carga,2.11,2.27
 mult2,lognormal,viagens,5.14,6.06

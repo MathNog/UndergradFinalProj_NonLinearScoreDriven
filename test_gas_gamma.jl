@@ -68,10 +68,12 @@ y_test  = y[len_train+1:end]
 dates_train = dates[1:len_train]
 dates_test  = dates[len_train+1:end]
 
+y_train = FuncoesTeste.normalize_data(y_train)
+
 distribution = "Gamma"
 dist         = UnobservedComponentsGAS.GammaDistribution(missing, missing)
-combination  = "multiplicative3"
-combinacao   = "mult3"
+combination  = "multiplicative2"
+combinacao   = "mult2"
 
 d   = 1.0
 α   = 0.0
@@ -108,6 +110,11 @@ std_residuals = FuncoesTeste.get_std_residuals(y_train, fitted_model.fit_in_samp
 q_residuals   = FuncoesTeste.get_quantile_residuals(fitted_model)
 res           = y_train .- fitted_model.fit_in_sample
 forecast, dict_hyperparams_and_fitted_components = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious; combination=combination);
+
+fitted_model.fit_in_sample = FuncoesTeste.denormalize_data(fitted_model.fit_in_sample, y_ref)
+y_train                    = FuncoesTeste.denormalize_data(y_train, y_ref)
+forecast["mean"]           = FuncoesTeste.denormalize_data(forecast["mean"], y_ref)
+forecast["scenarios"]      = FuncoesTeste.denormalize_data(forecast["scenarios"], y_ref)
 
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 

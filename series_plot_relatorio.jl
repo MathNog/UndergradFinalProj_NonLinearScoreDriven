@@ -25,10 +25,11 @@ dict_series["uk_visits"]["values"] = uk_visits[:,:Valor]
 dict_series["uk_visits"]["dates"]  = uk_visits[:,:Data]
 
 
+names_series = Dict("carga"=>"carga", "ena"=>"ena", "uk_visits"=>"viagens")
 
 for serie in ["ena", "carga", "uk_visits"]
 
-    titulo = "Série de $serie"
+    titulo = "Série de $(names_series[serie])"
     y = dict_series[serie]["values"]
     d = dict_series[serie]["dates"]
     if serie == "ena"
