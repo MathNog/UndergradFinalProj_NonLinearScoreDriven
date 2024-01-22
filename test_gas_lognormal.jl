@@ -21,19 +21,20 @@ DICT_MODELS = Dict()
 
 ena              = CSV.read(path_series*"ena_limpo.csv",DataFrame)
 carga            = CSV.read(path_series*"carga_limpo.csv", DataFrame)
-airline          = CSV.read(path_series*"AirPassengers.csv", DataFrame)
 uk_visits        = CSV.read(path_series*"uk_visits.csv", DataFrame)
+precipitacao     = CSV.read(path_series*"uhe_belo_monte_limpo.csv", DataFrame)
 
 carga_components            = CSV.read(path_series*"components_ets_multiplicativo_carga_log.csv", DataFrame)[:,2:end]
 ena_components              = CSV.read(path_series*"components_ets_multiplicativo_ena_log.csv", DataFrame)[2:end,2:end]
-uk_visits_components            = CSV.read(path_series*"components_ets_multiplicativo_uk_visits_log.csv", DataFrame)[:,2:end]
+uk_visits_components        = CSV.read(path_series*"components_ets_multiplicativo_uk_visits_log.csv", DataFrame)[:,2:end]
+precipitacao_components     = CSV.read(path_series*"components_ets_multiplicativo_precipitacao_log.csv", DataFrame)[:,2:end]
 
 # ena_components              = CSV.read(path_series*"components_ets_aditivo_ena_log.csv", DataFrame)[2:end,2:end]
 
 dict_series                 = Dict()
 dict_series["ena"]          = Dict()
 dict_series["carga"]        = Dict()
-dict_series["airline"]      = Dict()
+dict_series["precipitacao"] = Dict()
 dict_series["uk_visits"]    = Dict()
 
 dict_series["ena"]["values"]   = ena[:,:ENA]
@@ -48,8 +49,9 @@ dict_series["uk_visits"]["values"] = uk_visits[:,:Valor]
 dict_series["uk_visits"]["dates"]  = uk_visits[:,:Data]
 dict_series["uk_visits"]["components"] = uk_visits_components
 
-dict_series["airline"]["values"] = airline[:,2] .* 1.0
-dict_series["airline"]["dates"]  = airline[:,:Month]
+dict_series["precipitacao"]["values"]   = precipitacao[:,:MEDIA]
+dict_series["precipitacao"]["dates"]    = precipitacao[:,:DATA]
+dict_series["precipitacao"]["components"] = precipitacao_components
 
 dict_d = Dict(0.0 => "d_0", 0.5 => "d_05", 1.0 => "d_1")
 
@@ -57,7 +59,7 @@ dict_d = Dict(0.0 => "d_0", 0.5 => "d_05", 1.0 => "d_1")
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "carga"
+serie = "precipitacao"
 y     = log.(dict_series[serie]["values"])
 dates = dict_series[serie]["dates"]
 initial_components = dict_series[serie]["components"]
@@ -74,12 +76,12 @@ dates_test  = dates[len_train+1:end]
 
 distribution = "LogNormal"
 dist         = UnobservedComponentsGAS.NormalDistribution(missing, missing)
-combination  = "additive"
-combinacao   = "add"
+combination  = "multiplicative3"
+combinacao   = "mult3"
 
 d   = 1.0
 α   = 0.0
-tol = 5e-3
+tol = 5e-5
 stochastic = false
 
 DICT_MODELS["LogNormal"] = Dict() 
@@ -96,6 +98,10 @@ DICT_MODELS["LogNormal"]["uk_visits"] = UnobservedComponentsGAS.GASModel(dist, [
                                                             Dict(1 => true),  Dict(1 => false), 
                                                             Dict(1 => 12), false, stochastic, combination)
 
+DICT_MODELS["LogNormal"]["precipitacao"] = UnobservedComponentsGAS.GASModel(dist, [true, false], d, Dict(1=>false), 
+                                                            Dict(1=>false), Dict(1 => 2), 
+                                                            Dict(1 => 12), false, stochastic, combination)
+
 num_scenarious = 500
 
 gas_model = DICT_MODELS[distribution][serie]
@@ -103,10 +109,7 @@ gas_model = DICT_MODELS[distribution][serie]
 initial_values = FuncoesTeste.get_initial_values_from_components(y_train, initial_components, stochastic, serie, distribution) 
 
 fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, 
-                                                        max_optimization_time=300., initial_values=initial_values);
-
-println(FuncoesTeste.get_number_parameters(fitted_model))
-
+                                                        max_optimization_time=300.);# initial_values=initial_values);
 
 fitted_model.fit_in_sample
 fitted_model.fit_in_sample[1] = y_train[1]

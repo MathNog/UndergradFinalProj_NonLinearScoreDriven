@@ -22,10 +22,12 @@ DICT_MODELS = Dict()
 ena              = CSV.read(path_series*"ena_limpo.csv",DataFrame)
 carga            = CSV.read(path_series*"carga_limpo.csv", DataFrame)
 uk_visits        = CSV.read(path_series*"uk_visits.csv", DataFrame)
+precipitacao     = CSV.read(path_series*"uhe_belo_monte_limpo.csv", DataFrame)
 
 carga_components            = CSV.read(path_series*"components_ets_multiplicativo_carga.csv", DataFrame)[:,2:end]
 ena_components              = CSV.read(path_series*"components_ets_multiplicativo_ena.csv", DataFrame)[2:end,2:end]
 uk_visits_components        = CSV.read(path_series*"components_ets_multiplicativo_uk_visits.csv", DataFrame)[:,2:end]
+precipitacao_components     = CSV.read(path_series*"components_ets_multiplicativo_precipitacao.csv", DataFrame)[:,2:end]
 
 # ena_components              = CSV.read(path_series*"components_ets_aditivo_ena.csv", DataFrame)[2:end,2:end]
 
@@ -33,6 +35,7 @@ dict_series                 = Dict()
 dict_series["ena"]          = Dict()
 dict_series["carga"]        = Dict()
 dict_series["uk_visits"]      = Dict()
+dict_series["precipitacao"] = Dict()
 
 dict_series["ena"]["values"]     = ena[:,:ENA]
 dict_series["ena"]["dates"]      = ena[:,:Data]
@@ -46,6 +49,9 @@ dict_series["uk_visits"]["values"]     = Float64.(uk_visits[:,:Valor])
 dict_series["uk_visits"]["dates"]      = uk_visits[:,:Data]
 dict_series["uk_visits"]["components"] = uk_visits_components
 
+dict_series["precipitacao"]["values"]   = precipitacao[:,:MEDIA]
+dict_series["precipitacao"]["dates"]    = precipitacao[:,:DATA]
+dict_series["precipitacao"]["components"] = precipitacao_components
 
 dict_d = Dict(0.0 => "d_0", 0.5 => "d_05", 1.0 => "d_1")
 
@@ -53,7 +59,7 @@ dict_d = Dict(0.0 => "d_0", 0.5 => "d_05", 1.0 => "d_1")
 
 include("UnobservedComponentsGAS/src/UnobservedComponentsGAS.jl")
 
-serie = "uk_visits"
+serie = "precipitacao"
 y                  = dict_series[serie]["values"]
 dates              = dict_series[serie]["dates"]
 initial_components = dict_series[serie]["components"]
@@ -68,16 +74,16 @@ y_test  = y[len_train+1:end]
 dates_train = dates[1:len_train]
 dates_test  = dates[len_train+1:end]
 
-y_train = FuncoesTeste.normalize_data(y_train)
+# y_train = FuncoesTeste.normalize_data(y_train)
 
 distribution = "Gamma"
 dist         = UnobservedComponentsGAS.GammaDistribution(missing, missing)
-combination  = "multiplicative2"
-combinacao   = "mult2"
+combination  = "multiplicative3"
+combinacao   = "mult3"
 
 d   = 1.0
-α   = 0.0
-tol = 5e-3
+α   = 0.1
+tol = 5e-8
 stochastic = false
 
 DICT_MODELS["Gamma"] = Dict() 
@@ -94,6 +100,10 @@ DICT_MODELS["Gamma"]["uk_visits"] = UnobservedComponentsGAS.GASModel(dist, [fals
                                                             Dict(2=>true),  Dict(2=>false), 
                                                             Dict(2 => 12), false, stochastic, combination)
 
+DICT_MODELS["Gamma"]["precipitacao"] = UnobservedComponentsGAS.GASModel(dist, [false, true], d, Dict(2=>false), 
+                                                            Dict(2=>false), Dict(2=>1), 
+                                                            Dict(2 => 12), false, stochastic, combination)
+
 num_scenarious = 500
 
 gas_model = DICT_MODELS[distribution][serie]
@@ -101,8 +111,8 @@ gas_model = DICT_MODELS[distribution][serie]
 initial_values = FuncoesTeste.get_initial_values_from_components(y_train, initial_components, stochastic, serie, distribution) 
 
 fitted_model, initial_values = UnobservedComponentsGAS.fit(gas_model, y_train; α=α, tol=tol, 
-                                                        max_optimization_time=300., initial_values=initial_values);
-                                                        
+                                                        max_optimization_time=300.);#initial_values=initial_values);
+
 fitted_model.fit_in_sample
 fitted_model.fit_in_sample[1] = y_train[1]
 var           = fitted_model.fitted_params["param_2"].^2 ./ fitted_model.fitted_params["param_1"]
@@ -111,10 +121,10 @@ q_residuals   = FuncoesTeste.get_quantile_residuals(fitted_model)
 res           = y_train .- fitted_model.fit_in_sample
 forecast, dict_hyperparams_and_fitted_components = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, steps_ahead, num_scenarious; combination=combination);
 
-fitted_model.fit_in_sample = FuncoesTeste.denormalize_data(fitted_model.fit_in_sample, y_ref)
-y_train                    = FuncoesTeste.denormalize_data(y_train, y_ref)
-forecast["mean"]           = FuncoesTeste.denormalize_data(forecast["mean"], y_ref)
-forecast["scenarios"]      = FuncoesTeste.denormalize_data(forecast["scenarios"], y_ref)
+# fitted_model.fit_in_sample = FuncoesTeste.denormalize_data(fitted_model.fit_in_sample, y_ref)
+# y_train                    = FuncoesTeste.denormalize_data(y_train, y_ref)
+# forecast["mean"]           = FuncoesTeste.denormalize_data(forecast["mean"], y_ref)
+# forecast["scenarios"]      = FuncoesTeste.denormalize_data(forecast["scenarios"], y_ref)
 
 " ---- Visualizando os resíduos, fit in sample e forecast ----- "
 

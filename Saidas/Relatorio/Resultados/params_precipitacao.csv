@@ -1,0 +1,7 @@
+combinacao,distribuicao,b_mult,kappa_ar,phi_ar
+ad,lognormal,Inf,0.12231,0.84649
+ad,gama,Inf,0.14799,-0.16985
+mult1,lognormal,Inf,0.001,1.00081
+mult1,gama,Inf,0.001,1.00049
+mult2,lognormal,-0.80896,0.02275,-0.82341
+mult2,gama,0.00496,0.0632,0.83662

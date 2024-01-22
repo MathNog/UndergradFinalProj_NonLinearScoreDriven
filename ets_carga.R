@@ -188,3 +188,46 @@ slope = modelo$states[1:len_train, "b"]
 sazo = modelo$states[1:len_train, c(3:14)]
 
 write.csv(modelo$states[1:len_train,], file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_multiplicativo_uk_visits_log.csv")
+
+
+
+
+" -------- Série de Precipitação ------------"
+
+precipitacao = read.csv("C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\uhe_belo_monte_limpo.csv")
+
+y = precipitacao$MEDIA
+datas = precipitacao$DATA
+
+len_test = 12
+len_train = length(y) - len_test
+datas_train = datas[1:len_train]
+
+" ---- y em nível ---"
+
+y_train = y[1:len_train]
+y_train = ts(y_train, start = c(2000,6), end = c(2021, 10), frequency = 12)
+
+modelo = ets(y_train, model = "MNM")
+level = modelo$states[1:len_train, "l"]
+slope = modelo$states[1:len_train, "b"]
+sazo = modelo$states[1:len_train, c(3:14)]
+
+plot(modelo)
+
+write.csv(modelo$states[1:len_train,], file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_multiplicativo_precipitacao.csv")
+
+
+" ---- y em log ---"
+
+y_train = log(y[1:len_train])
+y_train = ts(y_train, start = c(2000,6), end = c(2021, 10), frequency = 12)
+
+modelo = ets(y_train, model = "MNM")
+level = modelo$states[1:len_train, "l"]
+slope = modelo$states[1:len_train, "b"]
+sazo = modelo$states[1:len_train, c(3:14)]
+
+write.csv(modelo$states[1:len_train,], file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_multiplicativo_precipitacao_log.csv")
+
+
