@@ -1,4 +1,4 @@
-using CSV, Plots, DataFrames, HypothesisTests, Distributions, StatsBase
+using CSV, Plots, DataFrames, HypothesisTests, Distributions, StatsBase, MLJBase
 
 
 function correct_scale(series, K, residuals)
@@ -7,6 +7,14 @@ function correct_scale(series, K, residuals)
     σ² = SQR/(N-K)
     return exp.(series)*exp(0.5*σ²)
 end
+
+function MASE(y, y_hat)
+    numerator   = MLJBase.mae(y_hat, y)
+    prev_naive = diff(y)
+    denominator = mean(abs.(prev_naive))
+    return numerator / denominator
+end
+
 
 " Definindo nomes"
 
@@ -331,6 +339,7 @@ CSV.write(path_saida*"Resultados\\testes_hipoteses_05.csv", df_testes)
 " ---------------- Criando arquivos de mapes -------------------"
 
 df_mapes = ones(0,2)
+df_mases = ones(0,2)
 
 col_comb    = []
 col_distrib = []
@@ -353,6 +362,34 @@ rename!(df_mapes, ["combinacao", "distribuicao", "serie", "MAPE Treino", "MAPE T
 replace!(df_mapes.serie, "uk_visits"=>"viagens")
 CSV.write(path_saida*"Resultados\\mapes.csv", df_mapes)
 
+" ---------------- Criando arquivos de mases -------------------"
+
+df_mases = ones(0,2)
+
+col_comb    = []
+col_distrib = []
+col_serie   = []
+
+for (combination, combination_name) in nomes_combinacoes
+    for (distribution, distribution_name) in nomes_distribuicoes
+        for serie in series
+            col_serie = vcat(col_serie, serie)
+            col_comb = vcat(col_comb, combination_name)
+            col_distrib = vcat(col_distrib, distribution_name)
+            
+            mase_treino = MASE(dict_series[serie]["serie_treino"],dict_fit_in_sample[combination_name][distribution_name][serie])
+            mase_teste = MASE(dict_series[serie]["serie_teste"],dict_forecast[combination_name][distribution_name][serie])
+            df_mases = vcat(df_mases, hcat(mase_treino, mase_teste))
+        end
+    end
+end
+
+df_mases = round.(df_mases, digits=5)
+df_mases = hcat(col_comb, col_distrib, col_serie, df_mases)
+df_mases = DataFrame(df_mases, :auto)
+rename!(df_mases, ["combinacao", "distribuicao", "serie", "MASE Treino", "MASE Teste"])
+replace!(df_mases.serie, "uk_visits"=>"viagens")
+CSV.write(path_saida*"Resultados\\mases.csv", df_mases)
 
 
 
