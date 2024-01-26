@@ -43,7 +43,7 @@ function add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Dict{Int64, Int64
     @variable(model, ϕ[1:max_order, idx_params])
     @variable(model, κ_AR[idx_params])
 
-    @constraint(model, [i in idx_params], 1e-4 ≤ κ_AR[i] )#≤ 10.)
+    @constraint(model, [i in idx_params], 1e-3 ≤ κ_AR[i] )#≤ 10.)
 
     for i in unique_orders
         for j in idx_params
@@ -72,8 +72,8 @@ function add_random_walk_slope!(model::Ml, s::Vector{Fl}, T::Int64, random_walk_
 
     @NLconstraint(model, [t = 2:T, j in idx_params], b[t, j] == ϕb*b[t - 1, j] + κ_b[j] * s[j][t])
     @NLconstraint(model, [t = 2:T, j in idx_params], RWS[t, j] == RWS[t - 1, j] + b[t - 1, j] + κ_RWS[j] * s[j][t])
-    @constraint(model, [j in idx_params], 1e-4 ≤ κ_RWS[j] )#≤ 10.)
-    @constraint(model, [j in idx_params], 1e-4 ≤ κ_b[j] )#≤ 10.)
+    @constraint(model, [j in idx_params], 1e-3 ≤ κ_RWS[j] )#≤ 10.)
+    @constraint(model, [j in idx_params], 1e-3 ≤ κ_b[j] )#≤ 10.)
     @constraint(model, 0.9 ≤ ϕb ≤ 1.)
 end
 
@@ -88,7 +88,7 @@ function add_random_walk!(model::Ml, s::Vector{Fl}, T::Int64, random_walk::Dict{
     @variable(model, κ_RW[idx_params])
 
     @NLconstraint(model, [t = 2:T, j in idx_params], RW[t, j] == RW[t-1, j] + κ_RW[j] * s[j][t])
-    @constraint(model, [j in idx_params], 1e-4 ≤ κ_RW[j] )#≤ 10.)
+    @constraint(model, [j in idx_params], 1e-3 ≤ κ_RW[j] )#≤ 10.)
 end
 
 "
@@ -207,7 +207,7 @@ function include_explanatories_in_dynamic(model::Ml, X::Union{Missing, Matrix{Fl
     if has_explanatories
         return X[t, :]' * model[:β][:, idx_param]
     else
-        combination == "additive" ? r = 0 : r = 1
-        return r
+        # combination == "additive" ? r = 0 : r = 1
+        return 0
     end
 end

@@ -29,6 +29,21 @@ sazo = modelo$states[1:len_train, c(3:14)]
 
 write.csv(modelo$states[1:len_train,], file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_multiplicativo_carga.csv")
 
+
+" ---- y em log ---"
+
+y_train = log(y[1:len_train])
+y_train = ts(y_train, start = c(2002,1), end = c(2022, 6), frequency = 12)
+
+modelo = ets(y_train, model = "MAM")
+level = modelo$states[1:len_train, "l"]
+slope = modelo$states[1:len_train, "b"]
+sazo = modelo$states[1:len_train, c(3:14)]
+
+write.csv(modelo$states[1:len_train,], file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_multiplicativo_carga_log.csv")
+
+
+
 " --- y normalizado ---"
 
 y_train = normalize_data(y[1:len_train])
@@ -41,43 +56,31 @@ sazo = modelo$states[1:len_train, c(3:14)]
 
 write.csv(modelo$states[1:len_train,], file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_multiplicativo_carga_normalizada.csv")
 
-" --- y / 10 ---"
 
-y_train = y[1:len_train] / 10
+" ---- y em nível aditivo ---"
+
+y_train = y[1:len_train]
 y_train = ts(y_train, start = c(2002,1), end = c(2022, 6), frequency = 12)
 
-modelo = ets(y_train, model = "MAM")
+modelo = ets(y_train, model = "AAA")
 level = modelo$states[1:len_train, "l"]
 slope = modelo$states[1:len_train, "b"]
 sazo = modelo$states[1:len_train, c(3:14)]
 
-write.csv(modelo$states[1:len_train,], file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_multiplicativo_carga_10.csv")
+write.csv(modelo$states[1:len_train,], file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_aditivo_carga.csv")
 
 
-" --- y / 100 ---"
+" ---- y em log aditivo ---"
 
-y_train = y[1:len_train] / 100
+y_train = log(y[1:len_train])
 y_train = ts(y_train, start = c(2002,1), end = c(2022, 6), frequency = 12)
 
-modelo = ets(y_train, model = "MAM")
+modelo = ets(y_train, model = "AAA")
 level = modelo$states[1:len_train, "l"]
 slope = modelo$states[1:len_train, "b"]
 sazo = modelo$states[1:len_train, c(3:14)]
 
-write.csv(modelo$states[1:len_train,], file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_multiplicativo_carga_100.csv")
-
-
-" --- y / 1000 ---"
-
-y_train = y[1:len_train] / 1000
-y_train = ts(y_train, start = c(2002,1), end = c(2022, 6), frequency = 12)
-
-modelo = ets(y_train, model = "MAM")
-level = modelo$states[1:len_train, "l"]
-slope = modelo$states[1:len_train, "b"]
-sazo = modelo$states[1:len_train, c(3:14)]
-
-write.csv(modelo$states[1:len_train,], file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_multiplicativo_carga_1000.csv")
+write.csv(modelo$states[1:len_train,], file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_aditivo_carga_log.csv")
 
 
 
@@ -85,7 +88,7 @@ write.csv(modelo$states[1:len_train,], file="C:\\Users\\matno\\OneDrive\\Documen
 
 ena = read.csv("C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\ena_limpo.csv")
 
-y = log(ena$ENA)
+y = ena$ENA
 datas = ena$Data
 
 len_test = 12
@@ -94,14 +97,26 @@ datas_train = datas[1:len_train]
 
 " ---- y em nível ---"
 
-y_train = y[10:len_train]
-y_train = ts(y_train, start = c(2000,10), end = c(2022, 8), frequency = 12)
+y_train = y[1:len_train]
+y_train = ts(y_train, start = c(2000,1), end = c(2022, 8), frequency = 12)
 
 modelo = ets(y_train, model = "MNM")
 #level = modelo$states[1:len_train, "l"]
 #sazo = modelo$states[1:len_train, c(2:13)]
 
 write.csv(modelo$states, file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_multiplicativo_ena.csv")
+
+" ---- y em log ---"
+
+y_train = log(y[1:len_train])
+y_train = ts(y_train, start = c(2000,1), end = c(2022, 8), frequency = 12)
+
+modelo = ets(y_train, model = "MNM")
+#level = modelo$states[1:len_train, "l"]
+#sazo = modelo$states[1:len_train, c(2:13)]
+
+write.csv(modelo$states, file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_multiplicativo_ena_log.csv")
+
 
 " --- y normalizado ---"
 
@@ -115,35 +130,104 @@ sazo = modelo$states[1:len_train, c(2:13)]
 write.csv(modelo$states, file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_multiplicativo_ena_normalizada.csv")
 
 
-" ---- y / 10 ---"
 
-y_train = y[10:len_train] / 10
-y_train = ts(y_train, start = c(2000,10), end = c(2022, 8), frequency = 12)
+" ---- y em nível aditivo ---"
+
+y_train = y[1:len_train]
+y_train = ts(y_train, start = c(2000,1), end = c(2022, 8), frequency = 12)
+
+modelo = ets(y_train, model = "ANA")
+#level = modelo$states[1:len_train, "l"]
+#sazo = modelo$states[1:len_train, c(2:13)]
+
+write.csv(modelo$states, file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_aditivo_ena.csv")
+
+" ---- y em log aditivo ---"
+
+y_train = log(y[1:len_train])
+y_train = ts(y_train, start = c(2000,1), end = c(2022, 8), frequency = 12)
+
+modelo = ets(y_train, model = "ANA")
+#level = modelo$states[1:len_train, "l"]
+#sazo = modelo$states[1:len_train, c(2:13)]
+
+write.csv(modelo$states, file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_aditivo_ena_log.csv")
+
+" -------- Série de UK Visits ------------"
+
+uk_visits = read.csv("C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\uk_visits.csv")
+
+y = uk_visits$Valor
+datas = uk_visits$Data
+
+len_test = 12
+len_train = length(y) - len_test
+datas_train = datas[1:len_train]
+
+" ---- y em nível ---"
+
+y_train = y[1:len_train]
+y_train = ts(y_train, start = c(1980,1), end = c(2005, 12), frequency = 12)
+
+modelo = ets(y_train, model = "MAM")
+level = modelo$states[1:len_train, "l"]
+slope = modelo$states[1:len_train, "b"]
+sazo = modelo$states[1:len_train, c(3:14)]
+
+write.csv(modelo$states[1:len_train,], file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_multiplicativo_uk_visits.csv")
+
+
+" ---- y em log ---"
+
+y_train = log(y[1:len_train])
+y_train = ts(y_train, start = c(1980,1), end = c(2005, 12), frequency = 12)
+
+modelo = ets(y_train, model = "MAM")
+level = modelo$states[1:len_train, "l"]
+slope = modelo$states[1:len_train, "b"]
+sazo = modelo$states[1:len_train, c(3:14)]
+
+write.csv(modelo$states[1:len_train,], file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_multiplicativo_uk_visits_log.csv")
+
+
+
+
+" -------- Série de Precipitação ------------"
+
+precipitacao = read.csv("C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\uhe_belo_monte_limpo.csv")
+
+y = precipitacao$MEDIA
+datas = precipitacao$DATA
+
+len_test = 12
+len_train = length(y) - len_test
+datas_train = datas[1:len_train]
+
+" ---- y em nível ---"
+
+y_train = y[1:len_train]
+y_train = ts(y_train, start = c(2000,6), end = c(2021, 10), frequency = 12)
 
 modelo = ets(y_train, model = "MNM")
 level = modelo$states[1:len_train, "l"]
-sazo = modelo$states[1:len_train, c(2:13)]
+slope = modelo$states[1:len_train, "b"]
+sazo = modelo$states[1:len_train, c(3:14)]
 
-write.csv(modelo$states, file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_multiplicativo_ena_10.csv")
+plot(modelo)
 
-" ---- y / 100 ---"
+write.csv(modelo$states[1:len_train,], file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_multiplicativo_precipitacao.csv")
 
-y_train = y[10:len_train] / 100
-y_train = ts(y_train, start = c(2000,10), end = c(2022, 8), frequency = 12)
 
-modelo = ets(y_train, model = "MNM")
-level = modelo$states[1:len_train, "l"]
-sazo = modelo$states[1:len_train, c(2:13)]
+" ---- y em log ---"
 
-write.csv(modelo$states, file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_multiplicativo_ena_100.csv")
-
-" ---- y / 1000 ---"
-
-y_train = y[10:len_train] / 1000
-y_train = ts(y_train, start = c(2000,10), end = c(2022, 8), frequency = 12)
+y_train = log(y[1:len_train])
+y_train = ts(y_train, start = c(2000,6), end = c(2021, 10), frequency = 12)
 
 modelo = ets(y_train, model = "MNM")
 level = modelo$states[1:len_train, "l"]
-sazo = modelo$states[1:len_train, c(2:13)]
+slope = modelo$states[1:len_train, "b"]
+sazo = modelo$states[1:len_train, c(3:14)]
 
-write.csv(modelo$states, file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_multiplicativo_ena_1000.csv")
+write.csv(modelo$states[1:len_train,], file="C:\\Users\\matno\\OneDrive\\Documentos\\PUC\\0_Períodos\\TCC\\Dados\\Tratados\\components_ets_multiplicativo_precipitacao_log.csv")
+
+

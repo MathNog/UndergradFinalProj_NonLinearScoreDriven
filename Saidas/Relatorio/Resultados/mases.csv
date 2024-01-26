@@ -1,0 +1,25 @@
+combinacao,distribuicao,serie,MASE Treino,MASE Teste
+ad,lognormal,ena,0.56647,0.80822
+ad,lognormal,carga,0.70144,0.80001
+ad,lognormal,viagens,0.42928,0.68679
+ad,lognormal,precipitacao,0.51726,0.57935
+ad,gama,ena,0.65699,0.87295
+ad,gama,carga,0.74529,0.82281
+ad,gama,viagens,0.32925,0.51979
+ad,gama,precipitacao,0.51336,0.53432
+mult1,lognormal,ena,0.70128,0.61223
+mult1,lognormal,carga,0.80931,1.12969
+mult1,lognormal,viagens,0.81038,1.68802
+mult1,lognormal,precipitacao,0.55234,0.64108
+mult1,gama,ena,0.6419,1.09191
+mult1,gama,carga,0.72154,1.58015
+mult1,gama,viagens,0.43314,0.56005
+mult1,gama,precipitacao,0.5131,0.51757
+mult2,lognormal,ena,0.62207,1.0033
+mult2,lognormal,carga,0.71772,0.76318
+mult2,lognormal,viagens,0.31857,0.44438
+mult2,lognormal,precipitacao,0.51783,0.5978
+mult2,gama,ena,0.6372,0.96912
+mult2,gama,carga,0.66974,1.13684
+mult2,gama,viagens,0.32132,0.49015
+mult2,gama,precipitacao,0.49586,0.53484

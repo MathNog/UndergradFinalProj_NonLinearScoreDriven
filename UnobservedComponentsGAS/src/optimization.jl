@@ -86,19 +86,22 @@ function include_explanatory_variables!(model::Ml, X::Matrix{Fl}) where {Ml, Fl}
     @variable(model, β[1:p])
 end
 
+function my_exp(any)
+    return exp(any)
+end
+
 "
 Includes the complete dynamic for the time-varying parameters in the JuMP model.
 "
 function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASModel, X::Union{Matrix, Missing}, T::Int64) where {Ml, Gl}
 
     @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic, combination = gas_model
-
-    # register(model, :exp, 1, exp; autodiff = true)    
     
     idx_time_varying_params = get_idxs_time_varying_params(time_varying_params) 
 
     @variable(model, c[idx_time_varying_params])
     @variable(model, b_mult[idx_time_varying_params])
+    register(model, :my_exp, 1, my_exp; autodiff = true)    
 
     has_explanatory = !ismissing(X) ? true : false
 
@@ -135,7 +138,7 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
                                 include_explanatories_in_dynamic(model, X, has_explanatory_param, t, i; combination=combination)
                 # dynamic_aux[t] = exp(dynamic_aux[t])
             end
-        else# combination == "multiplicative2"
+        elseif combination == "multiplicative2"
             println("Combination = $combination")
             # μ_t = m_t × (1 + s_t)
             for t in 2:T                
@@ -146,11 +149,25 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
                                 include_explanatories_in_dynamic(model, X, has_explanatory_param, t, i; combination=combination)
                 # dynamic_aux[t] = exp(dynamic_aux[t])
             end
+        else #combination == "multiplicative3"
+            println("Combination = $combination")
+            # μ_t = m_t + exp(b*m_t) × s_t
+            for t in 2:T                
+                m[t] = (include_component_in_dynamic(model, :RW, has_random_walk(random_walk, i), t, i; combination=combination) +
+                        include_component_in_dynamic(model, :RWS, has_random_walk_slope(random_walk_slope, i), t, i; combination=combination) +
+                        include_component_in_dynamic(model, :AR, has_AR(ar, i), t, i; combination=combination))
+                s_t = include_component_in_dynamic(model, :S, has_seasonality(seasonality, i), t, i; combination=combination)
+
+                exp_b_mult = @NLexpression(model, model[:c][i] + m[t] + my_exp(b_mult[i]*m[t])*s_t)
+
+                dynamic_aux[t] = exp_b_mult  
+                # dynamic_aux[t] = exp(dynamic_aux[t])
+            end
         end
         
         if typeof(dist) == UnobservedComponentsGAS.GammaDistribution
             println("Colocando funcao de ligação log/exp")
-            @NLconstraint(model,[t = 2:T], parameters[t, i] ==  exp(dynamic_aux[t]))
+            @NLconstraint(model,[t = 2:T], parameters[t, i] ==  dynamic_aux[t])
         else
             println("Colocando funcao de ligação identidade")
             @NLconstraint(model,[t = 2:T], parameters[t, i] ==  dynamic_aux[t])

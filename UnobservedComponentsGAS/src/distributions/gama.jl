@@ -43,14 +43,14 @@ function score_gama(α, λ, y)
     α <= 0 ? α = 1e-2 : nothing
     λ <= 0 ? λ = 1e-4 : nothing
 
-    # ∇_α =  log(y) - y/λ + log(α) - Ψ1(α) - log(λ) + 1
-    # ∇_λ = (α/λ)*((y/λ)-1)
+    ∇_α =  log(y) - y/λ + log(α) - Ψ1(α) - log(λ) + 1
+    ∇_λ = (α/λ)*((y/λ)-1)
 
-    ∇_α_exp = α * (log(y) - y/λ + log(α) - Ψ1(α) - log(λ) + 1)
-    ∇_λ_exp = α * (y/λ - 1)
+    # ∇_α_exp = α * (log(y) - y/λ + log(α) - Ψ1(α) - log(λ) + 1)
+    # ∇_λ_exp = α * (y/λ - 1)
     # println("----------- Score Gamma -------------")
     # println(∇_α, ∇_λ)
-    return [∇_α_exp; ∇_λ_exp]
+    return [∇_α; ∇_λ]
 end
 
 "
@@ -62,15 +62,15 @@ function fisher_information_gama(α, λ)
     α <= 0 ? α = 1e-2 : nothing
     λ <= 0 ? λ = 1e-4 : nothing
     
-    # I_λ = α/(λ^2)
-    # I_α = Ψ2(α) - 1/α
+    I_λ = α/(λ^2)
+    I_α = Ψ2(α) - 1/α
 
-    I_α_exp = α^2 * (Ψ2(α) - 1/α)
-    I_λ_exp = α
+    # I_α_exp = α^2 * (Ψ2(α) - 1/α)
+    # I_λ_exp = α
 
     # println("--------------Fisher Gamma --------------")
     # println(I_α, I_λ)
-    return [I_α_exp 0; 0 I_λ_exp]
+    return [I_α 0; 0 I_λ]
 end
 
 "

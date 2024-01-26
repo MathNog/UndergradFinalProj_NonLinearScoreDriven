@@ -1,0 +1,25 @@
+,serie,distrib,comb,MAPE Treino,MAPE Teste
+0,ena,LogNormal,additive,15.08,17.03
+1,ena,LogNormal,multiplicative1,19.53,15.6
+2,ena,LogNormal,multiplicative2,19.37,13.66
+3,ena,LogNormal,multiplicative3,16.35,22.26
+4,ena,Gamma,additive,17.56,17.94
+5,ena,Gamma,multiplicative1,19.45,16.57
+6,ena,Gamma,multiplicative2,16.81,23.68
+7,ena,Gamma,multiplicative3,16.83,21.34
+8,carga,LogNormal,additive,2.06,2.39
+9,carga,LogNormal,multiplicative1,12.55,14.68
+10,carga,LogNormal,multiplicative2,2.37,3.31
+11,carga,LogNormal,multiplicative3,2.11,2.27
+12,carga,Gamma,additive,2.19,2.42
+13,carga,Gamma,multiplicative1,12.61,15.17
+14,carga,Gamma,multiplicative2,2.11,4.77
+15,carga,Gamma,multiplicative3,1.97,3.45
+16,uk_visits,LogNormal,additive,6.8,8.51
+17,uk_visits,LogNormal,multiplicative1,30.57,39.15
+18,uk_visits,LogNormal,multiplicative2,12.55,21.48
+19,uk_visits,LogNormal,multiplicative3,5.14,6.06
+20,uk_visits,Gamma,additive,5.36,7.09
+21,uk_visits,Gamma,multiplicative1,25.85,36.52
+22,uk_visits,Gamma,multiplicative2,18.3,8864.01
+23,uk_visits,Gamma,multiplicative3,5.2,6.76

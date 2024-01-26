@@ -21,11 +21,43 @@ function correct_scale(series, K, residuals)
     return exp.(series)*exp(0.5*σ²)
 end
 
+function get_fitted_values(fitted_model, dates_train, std_residuals, q_residuals, residuals, param, recover_scale)
+    dict_fitted_values = Dict()
+    dict_fitted_values["fit_in_sample"] = fitted_model.fit_in_sample
+    dict_fitted_values["dates"] = dates_train
+    dict_fitted_values["std_residuals"] = std_residuals
+    dict_fitted_values["q_residuals"] = q_residuals 
+    dict_fitted_values["residuals"] = residuals 
+    dict_fitted_values["param_1"] = fitted_model.fitted_params["param_1"]
+    dict_fitted_values["param_2"] = fitted_model.fitted_params["param_2"]
+
+    components = get_components(fitted_model, param, recover_scale, residuals)
+
+    for (key,value) in components
+        dict_fitted_values[key] = value
+    end
+
+    return DataFrame(dict_fitted_values)
+    
+end
+
+function get_forecast_values(forecast, dates_test)
+
+    col_names = ["dates", "mean"]
+    for s in 1:size(forecast["scenarios"],2)
+        push!(col_names, "s$s")
+    end
+    df_forecast = DataFrame(hcat(dates_test, forecast["mean"], forecast["scenarios"]), :auto)
+    rename!(df_forecast, col_names)
+
+    return df_forecast
+end
+
 function get_number_parameters(fitted_model)
     K = 0
     for param in keys(fitted_model.components)
         for (key,value) in fitted_model.components[param]
-            if key != "intercept"
+            if key != "intercept" && key != "b_mult"
                 for (key2, value2) in value["hyperparameters"]
                     if key2 in ["γ", "γ_star"]
                         K+=size(value2,1)
@@ -47,7 +79,7 @@ function get_parameters(fitted_model)
         println(param)
         for (key,value) in fitted_model.components[param]
             println(" ", key,)
-            if key != "intercept"
+            if key != "intercept" && key != "b_mult"
                 for (key2, value2) in value["hyperparameters"]
                     println("   ", key2)
                     # println("   ", value2)
@@ -55,6 +87,8 @@ function get_parameters(fitted_model)
                         dict_params[param*"_"*key*"_"*key2] = value2
                     end
                 end
+            elseif key == "b_mult"
+                dict_params[param*"_"*key] = value
             end
         end
     end
@@ -67,18 +101,15 @@ function get_std_residuals(y, fit_in_sample, var)
 end
 
 
-function get_residuals(fitted_model, model, y, standarize)
-    if model == "Normal"
-        return fitted_model.residuals["std_residuals"][2:end]
-    else
-        r = (y .- fitted_model.fit_in_sample)[2:end]
-        if standarize
-            return (r.-mean(r))./std(r)
-        else
-            return r
-        end
-    end
-end
+# function get_residuals(fitted_model, model, y, standarize)
+
+#     r = (y .- fitted_model.fit_in_sample)[2:end]
+#     if standarize
+#         return (r.-mean(r))./std(r)
+#     else
+#         return r
+#     end
+# end
 
 function get_quantile_residuals(fitted_model)
     return fitted_model.residuals["q_residuals"]
@@ -92,21 +123,49 @@ function plot_residuals(residuals, dates, model, std_bool, serie, type, combinat
     else
         std_bool==true ? std_title = "Padronizados" : std_title = ""
         plot(title="Resíduos $std_title $model - $serie - $combination - d = $d", titlefontsize=12)
-        plot!(dates[2:end], residuals , label="Resíduos")
+        plot!(dates, residuals , label="Resíduos")
     end
 end
 
 function plot_acf_residuals(residuals, model, serie, type, combination, d)
     
-    acf_values = autocor(residuals[2:end])
-    lag_values = collect(0:length(acf_values) - 1)
+    acf_values = autocor(residuals)[1:15]
+    lag_values = collect(0:14)
     conf_interval = 1.96 / sqrt(length(residuals)-1)  # 95% confidence interval
 
     type == "quantile" ? tipo = "Quantílicos" : tipo = ""
     plot(title="FAC dos Residuos $tipo $model - $serie - $combination - d = $d", titlefontsize=11)
-    plot!(autocor(residuals[2:end]),seriestype=:stem, label="")
+    plot!(lag_values,acf_values,seriestype=:stem, label="",xticks=(lag_values,lag_values))
     hline!([conf_interval, -conf_interval], line = (:red, :dash), label = "IC 95%")
 end
+
+function test_H(residuals; type::String="julia")
+    
+    T = length(residuals)
+    h = Int64(floor(T/3))
+
+    res1 = residuals[1:h]
+    res3 = residuals[2*h+1:end]
+
+    if type == "julia"
+        f_test  = VarianceFTest(res3, res1)
+        p_value = pvalue(f_test)
+        F_statistic = f_test.F
+    else    
+        σ2_1 = var(res1; corrected=true) # / (n-1)
+        σ2_3 = var(res3; corrected=true)
+
+        df1 = length(res1) - 1
+        df3 = length(res3) - 1
+
+        F_statistic = (σ2_3 / σ2_1)
+
+        p_value = 2* minimum([ccdf(FDist(df3, df1), F_statistic), cdf(FDist(df3, df1), F_statistic)])
+    end
+
+    return F_statistic, p_value
+end
+
 
 function get_residuals_diagnosis_pvalues(residuals, fitted_model)
     dof = get_number_parameters(fitted_model)
@@ -116,13 +175,15 @@ function get_residuals_diagnosis_pvalues(residuals, fitted_model)
     lb = pvalue(LjungBoxTest(residuals, 24, dof))
     # ARCH
     arch = pvalue(ARCHLMTest(residuals, 12))
+    #H 
+    H = test_H(residuals)[2]
     
-    return Dict(:lb=>lb, :jb=>jb, :arch=>arch)
+    return Dict(:lb=>lb, :jb=>jb, :arch=>arch, :H=>H)
 end
 
 function get_residuals_diagnostics(residuals, α, fitted_model)
-    d = get_residuals_diagnosis_pvalues(residuals[2:end], fitted_model)
-    nomes = Dict(:lb=>"Ljung Box", :jb=>"Jarque Bera", :arch=>"ARCHLM")
+    d = get_residuals_diagnosis_pvalues(residuals, fitted_model)
+    nomes = Dict(:lb=>"Ljung Box", :jb=>"Jarque Bera", :arch=>"ARCHLM", :H=>"H")
     rows = []
     for (teste,pvalue) in d
         nome = nomes[teste]
@@ -136,10 +197,23 @@ end
 
 function plot_residuals_histogram(residuals, model, serie, type, combination, d)
     if type == "quantile"
-        histogram(residuals[2:end], title="Histograma Residuos Quantílicos $model - $serie - $combination - d = $d", label="", titlefontsize=11)
+        histogram(residuals, title="Histograma Residuos Quantílicos $model - $serie - $combination - d = $d", label="", titlefontsize=11)
     else
-        histogram(residuals[2:end], title="Histograma Residuos $model - $serie - $combination - d = $d", label="", titlefontsize=11)
+        histogram(residuals, title="Histograma Residuos $model - $serie - $combination - d = $d", label="", titlefontsize=11)
     end
+end
+
+function get_log_likelihood(fitted_model)
+
+    # T = length(y)
+    # if dist == "LogNormal"
+    #     log_like = sum(logpdf(LogNormal(param_1[i], param_2[i]), y[i]) for i in 1:T)
+    # else
+    #     log_like = sum(logpdf(Gamma(param_1[i], param_2[i]/param_1[i]), y[i]) for i in 1:T)
+    # end
+    log_like = JuMP.objective_value(fitted_model.model)
+
+    return log_like
 end
 
 function plot_fit_in_sample(fitted_model, fit_dates, y_train, model, recover_scale, residuals, serie, combination, d)
@@ -153,7 +227,7 @@ function plot_fit_in_sample(fitted_model, fit_dates, y_train, model, recover_sca
     end
     # println(fit_in_sample)
     plot(fit_dates[2:end], y_train[2:end], label="Série")
-    plot!(fit_dates[2:end], fit_in_sample[1:end], label="Fit in sample")    
+    plot!(fit_dates[2:end], fit_in_sample, label="Fit in sample")    
     plot!(title=" Fit in sample GAS-CNO $model - $serie - $combination - d = $d", titlefontsize=11)
     
 end
@@ -187,7 +261,7 @@ function plot_fit_forecast(fitted_model, forecast,fit_dates, y_train, y_test, fo
     end
     y = vcat(y_train, y_test)
     p = plot(title = "Fit and Forecast GAS-CNO $model - $serie - $combination - d = $d", titlefontsize=11)
-    p = plot!(dates[2:end], y[2:end], label="Série")
+    p = plot!(dates, y, label="Série")
     p = plot!(fit_dates[2:end], fit_in_sample[1:end], label="Fit in sample") 
     p = plot!(forecast_dates, forecast_mean, label="Forecast", color="red")
     display(p)
@@ -200,12 +274,12 @@ function get_components(fitted_model, param, recover_scale, residuals)
     if recover_scale
         K = get_number_parameters(fitted_model)
         for key in keys(dict_components)
-            key != "intercept" ? components[key] = correct_scale(dict_components[key]["value"], K, residuals) : nothing
+            key != "intercept"  && key != "b_mult" ? components[key] = correct_scale(dict_components[key]["value"], K, residuals) : nothing
         end
             
     else     
         for key in keys(dict_components)
-            key != "intercept" ? components[key] = dict_components[key]["value"] : nothing
+            key != "intercept" && key != "b_mult" ? components[key] = dict_components[key]["value"] : nothing
         end
     end
     return components
@@ -254,15 +328,15 @@ function plot_diagnosis(residuals, dates, model, std_bool, serie, type, combinat
     # std_bool==true ? res = (residuals.-mean(residuals))./std(residuals) : res = residuals
     std_bool==true ? std_title = "Padronizados" : std_title = ""
     r = plot(title="Resíduos $tipo$std_title")
-    r = plot!(dates[2:end], residuals , label="Resíduos$tipo")
+    r = plot!(dates, residuals , label="Resíduos$tipo")
 
     @info "ACF"
-    acf_values = autocor(residuals[2:end])
+    acf_values = autocor(residuals)
     lag_values = collect(0:length(acf_values) - 1)
     conf_interval = 1.96 / sqrt(length(residuals)-1)  # 95% confidence interval
 
     a = plot(title="FAC dos Residuos$tipo")
-    a = plot!(autocor(residuals[2:end]),seriestype=:stem, label="")
+    a = plot!(lag_values, acf_values[1:15],seriestype=:stem, label="", xticks=(lag_values,lag_values))
     a = hline!([conf_interval, -conf_interval], line = (:red, :dash), label = "IC 95%")
 
     @info "Todos"
