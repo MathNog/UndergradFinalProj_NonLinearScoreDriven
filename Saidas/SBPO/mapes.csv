@@ -1,0 +1,5 @@
+combinacao,distribuicao,serie,MAPE Treino,MAPE Teste
+additive,lognormal,uk_visits,6.8,8.51
+additive,gamma,uk_visits,5.36,7.09
+non linear,lognormal,uk_visits,5.14,6.06
+non linear,gamma,uk_visits,5.2,6.76
