@@ -376,3 +376,68 @@ combined_df[:Model] = ["additive", "non linear"]
 
 # Reorder the columns to place 'Model' at the beginning
 combined_df = combined_df[:, [:Model, :Treino_Lognormal_kappa_level, :Treino_Lognormal_kappa_slope, :Treino_Lognormal_phi_slope, :Treino_Lognormal_phi, :Treino_Gamma_kappa_level, :Treino_Gamma_kappa_slope, :Treino_Gamma_phi_slope, :Treino_Gamma_phi]]
+
+
+
+
+
+function jarque_bera(residuals)
+    jb = JarqueBeraTest(residuals)
+    return Dict("statistic" => jb.JB, "pvalue" => round(pvalue(jb), digits=4))
+end
+
+function ljung_box(residuals, lags)
+    lb = LjungBoxTest(residuals, lags)
+    return Dict("statistic" => lb.Q, "pvalue" => round(pvalue(lb), digits=4))
+end
+
+function descriptive_statistics(residuals)
+
+    return Dict(
+        "min" =>      round(minimum(residuals), digits = 4),
+        "max" =>      round(maximum(residuals), digits = 4),
+        "median" =>   round(median(residuals), digits = 4),
+        "mean" =>     round(mean(residuals), digits = 4),
+        "kurtosis" => round(kurtosis(residuals), digits = 4),
+        "skewness" => round(skewness(residuals), digits = 4),
+        "q05" =>      round(quantile(residuals, 0.05), digits = 4),
+        "q95" =>      round(quantile(residuals, 0.95), digits = 4),
+    )
+
+end
+
+
+function diagnostics_table(residuals)
+    stats = DataFrame(descriptive_statistics(residuals))
+    jb    = DataFrame(jarque_bera(residuals))
+    lb    = DataFrame(ljung_box(residuals, 12))
+    lb2   = DataFrame(ljung_box(residuals.^2, 12))
+
+    rename!(jb, ["jb $name" for name in names(jb)])
+    rename!(lb, ["lb $name" for name in names(lb)])
+    rename!(lb2, ["lb2 $name" for name in names(lb2)])
+    df = hcat(jb, lb, lb2)
+
+    return stats, df
+end
+
+df_statistics = DataFrame()
+df_hp         = DataFrame()
+df_specs      = DataFrame()
+for (combination, combination_name) in nomes_combinacoes
+    for (distribution, distribution_name) in nomes_distribuicoes
+        specs = DataFrame(Dict("comb"=>combination_name, "Dist"=> distribution_name))
+        residuals = dict_q_residuos[combination_name][distribution_name]["uk_visits"][2:end]
+        stats, hp =  diagnostics_table(residuals)
+        df_specs = vcat(df_specs, specs)
+        df_statistics = vcat(df_statistics, stats)
+        df_hp = vcat(df_hp, hp)
+    end
+end
+
+df_hp = hcat(df_specs, df_hp)
+df_statistics = hcat(df_specs, df_statistics)
+
+select!(df_hp, ["Dist", "comb", "jb pvalue","lb pvalue","lb2 pvalue"])
+
+select!(df_statistics, ["Dist", "comb", "mean","median", "min", "max","q05","q95","skewness", "kurtosis"])
