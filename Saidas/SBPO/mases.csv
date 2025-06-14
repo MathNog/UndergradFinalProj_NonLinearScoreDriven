@@ -1,0 +1,5 @@
+combinacao,distribuicao,serie,MASE Treino,MASE Teste
+additive,lognormal,uk_visits,0.42928,0.68679
+additive,gamma,uk_visits,0.32925,0.51979
+non linear,lognormal,uk_visits,0.31857,0.44438
+non linear,gamma,uk_visits,0.32132,0.49015

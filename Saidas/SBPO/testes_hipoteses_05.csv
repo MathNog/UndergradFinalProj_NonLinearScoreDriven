@@ -1,0 +1,17 @@
+combinacao,distribuicao,serie,teste,pvalor,rejeicao
+additive,lognormal,uk_visits,Jarque Bera,0.54184,Não rejeita H₀
+additive,lognormal,uk_visits,H,0.66097,Não rejeita H₀
+additive,lognormal,uk_visits,ARCHLM,0.03185,Rejeita H₀
+additive,lognormal,uk_visits,Ljung Box,0.0,Rejeita H₀
+additive,gamma,uk_visits,Jarque Bera,0.15455,Não rejeita H₀
+additive,gamma,uk_visits,H,0.4695,Não rejeita H₀
+additive,gamma,uk_visits,ARCHLM,0.08907,Não rejeita H₀
+additive,gamma,uk_visits,Ljung Box,0.0,Rejeita H₀
+non linear,lognormal,uk_visits,Jarque Bera,0.67381,Não rejeita H₀
+non linear,lognormal,uk_visits,H,0.54364,Não rejeita H₀
+non linear,lognormal,uk_visits,ARCHLM,0.10249,Não rejeita H₀
+non linear,lognormal,uk_visits,Ljung Box,0.0,Rejeita H₀
+non linear,gamma,uk_visits,Jarque Bera,0.03195,Rejeita H₀
+non linear,gamma,uk_visits,H,0.3648,Não rejeita H₀
+non linear,gamma,uk_visits,ARCHLM,0.05162,Não rejeita H₀
+non linear,gamma,uk_visits,Ljung Box,0.0,Rejeita H₀

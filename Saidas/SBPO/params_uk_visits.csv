@@ -1,0 +1,5 @@
+combinacao,distribuicao,kappa_slope,kappa_level,phi_slope,b_mult
+additive,lognormal,0.001,0.66801,1.0,Inf
+additive,gamma,0.001,0.36407,1.0,Inf
+non linear,lognormal,0.001,0.29769,1.0,-0.7794
+non linear,gamma,0.001,0.34748,1.0,0.00011
