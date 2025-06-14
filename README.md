@@ -28,7 +28,7 @@ The final report can be accessed via the PUC-Rio Maxwell System:
 
 ## Academic Output
 
-This project led to a peer-reviewed paper presented at the **Brazilian Symposium on Operational Research (SBPO 2024)**:
+This project led to a paper presented at the **Brazilian Symposium on Operational Research (SBPO 2024)**:
 
 📄 *Non-Gaussian Score-Driven Models with Non-Linear Unobserved Components Combination*  
 📚 [Proceedings – SBPO 2024](https://proceedings.science/sbpo/sbpo-2024/trabalhos/non-gaussian-score-driven-models-with-non-linear-unobserved-components-combinati?lang=pt-br)
